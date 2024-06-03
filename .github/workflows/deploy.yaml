@@ -17,6 +17,12 @@ jobs:
               with:
                 fetch-depth: 0
 
+            - name: Configure Git
+              run: |
+                git config --global user.name "github-actions[bot]"
+                git config --global user.email "github-actions[bot]@users.noreply.github.com"
+                git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+    
             - name: Fetch All Branches
               run: git fetch --all
 
@@ -26,3 +32,7 @@ jobs:
                 git checkout ${{ matrix.branch }}
                 git rebase origin/develop || git rebase --abort
                 git diff origin/${{ matrix.branch }} --quiet || git push origin HEAD:${{ matrix.branch }} --force
+
+            - name: Send Message if No Changes
+              if: steps.rebase.outcome == 'success'
+              run: echo "No changes detected in ${{ matrix.branch }} after rebasing from develop."
