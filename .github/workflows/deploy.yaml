@@ -5,4 +5,23 @@ on:
 jobs:
     release-branch:
         runs-on: ubuntu-latest
-        
+        strategy:
+            matrix:
+                branch:
+                   - feature-1
+                   - feature-2
+        steps:
+            - name: Checkout Repo
+              uses: actions/checkout@v2
+              with:
+                fetch-depth: 0
+
+            - name: Fetch All Branches
+              run: git fetch --all
+
+            - name: Rebase Feature Branch onto Develop
+              id: rebase
+              run: |
+                git checkout ${{ matrix.branch }}
+                git rebase origin/develop || git rebase --abort
+                git diff origin/${{ matrix.branch }} --quiet || git push origin HEAD:${{ matrix.branch }} --force
