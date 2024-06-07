@@ -14,13 +14,19 @@ jobs:
             with:
               token: ${{ secrets.GITHUB_TOKEN }}
 
-          - name: Get all the branches except default branch
+          - name: Get all branches except develop and main
             id: get-branches
             run: |
-              DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
-              BRANCHES=$(git branch -r | grep -vE "origin/(develop|main)" | sed 's@^ *origin/@@')
+              DEFAULT_BRANCH=develop  # Replace with your default branch
+              BRANCHES=$(git branch -r | grep -vE "origin/(${DEFAULT_BRANCH}|main)" | sed 's@^ *origin/@@')
               BRANCH_LIST=$(echo $BRANCHES | jq -R -s -c 'split("\n") | map(select(length > 0))')
-              echo "::set-output name=branches::$BRANCH_LIST"
+              echo "Branches list: $BRANCH_LIST"  # Log for debugging
+              echo "branches=$BRANCH_LIST" >> $GITHUB_ENV  # Set output using Environment File
+        
+          - name: Set output
+            id: set-output
+            run: |
+              echo "branches=$(cat $GITHUB_ENV | grep 'branches=' | cut -d'=' -f2-)" >> $GITHUB_ENV
 
     rebase-branches:
       needs: fetch-branches
