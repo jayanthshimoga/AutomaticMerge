@@ -4,17 +4,39 @@ on:
     workflow_dispatch:
 jobs:
     fetch-branches:
-        runs-on: ubuntu-latest
-        
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v2
-              with:
-                token: ${{ secrets.GITHUB_TOKEN }}
+      runs-on: ubuntu-latest
+      outputs:
+        branches: ${{ steps.get-branches.output.branches }}
+      
+      steps:
+          - name: Checkout repository
+            uses: actions/checkout@v2
+            with:
+              token: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Get all the branches except default branch
-              id: get-branches
-              run: |
-                DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
-                BRANCHES=$(git branch -r | grep -v $DEFAULT_BRANCH | sed 's@^ *origin/@@')
-                echo "::set-output name=branches::$(echo $BRANCHES | tr '\n' ',')"
+          - name: Get all the branches except default branch
+            id: get-branches
+            run: |
+              DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+              BRANCHES=$(git branch -r | grep -vE "origin/(develop|main)" | sed 's@^ *origin/@@')
+              BRANCH_LIST=$(echo $BRANCHES | tr '\n' ',' | sed 's/,$//')
+              echo "::set-output name=branches::$BRANCH_LIST"
+
+    rebase-branches:
+      needs: fetch-branches
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          branch: [${{ fromJSON(needs.fetch-branches.outputs.branches) }}]
+          
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v2
+          with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+        
+        - name: Print just names
+          run: |
+            echo '${{ matrix.branch }}'
+
+
