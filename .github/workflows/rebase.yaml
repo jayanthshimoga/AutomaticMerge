@@ -19,27 +19,24 @@ jobs:
               git remote set-head origin --auto
               git fetch --all --prune
         
-          - name: Debug remote branches
+          - name: List branches
             run: |
-              echo "Listing remote branches:"
               git branch -r
       
           - name: Get all branches except develop and main
             id: get-branches
             run: |
               DEFAULT_BRANCH=develop 
-              echo "Default branch: $DEFAULT_BRANCH"
-      
               BRANCHES=$(git branch -r | grep -vE "origin/($DEFAULT_BRANCH|main|HEAD)" | sed 's@^ *origin/@@')
               echo "Fetched branches: $BRANCHES" 
       
               if [ -z "$BRANCHES" ]; then
-                echo "No branches found matching the criteria."
-                exit 1  # Exit with error if no branches found
+                echo "If No branches are found then exit."
+                exit 1 
               fi
 
               BRANCH_LIST=$(echo $BRANCHES | jq -R -s -c 'split("\n") | map(select(length > 0))')
-              echo "Branches list as JSON: $BRANCH_LIST" 
+              echo "Branches List: $BRANCH_LIST" 
               echo "branches=$BRANCH_LIST" >> $GITHUB_OUTPUT
 
     rebase-branches:
@@ -56,7 +53,8 @@ jobs:
             token: ${{ secrets.GITHUB_TOKEN }}
         
         - name: Print just names
-          run:
-            echo 'Success'
+          run: |
+            BRANCH=${{ matrix.branch }}
+            echo "branch: $BRANCH"
 
 
