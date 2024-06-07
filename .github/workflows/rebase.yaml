@@ -27,17 +27,20 @@ jobs:
           - name: Get all branches except develop and main
             id: get-branches
             run: |
-              DEFAULT_BRANCH=develop  # Replace with your default branch
+              DEFAULT_BRANCH=develop 
               echo "Default branch: $DEFAULT_BRANCH"
       
-              # Fetching branches excluding develop, main, and HEAD
               BRANCHES=$(git branch -r | grep -vE "origin/($DEFAULT_BRANCH|main|HEAD)" | sed 's@^ *origin/@@')
-              echo "Fetched branches: $BRANCHES"  # Log for debugging
+              echo "Fetched branches: $BRANCHES" 
       
               if [ -z "$BRANCHES" ]; then
                 echo "No branches found matching the criteria."
                 exit 1  # Exit with error if no branches found
               fi
+
+              BRANCH_LIST=$(echo $BRANCHES | jq -R -s -c 'split("\n") | map(select(length > 0))')
+              echo "Branches list as JSON: $BRANCH_LIST" 
+              echo "branches=$BRANCH_LIST" >> $GITHUB_OUTPUT
 
     rebase-branches:
       needs: fetch-branches
