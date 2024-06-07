@@ -14,18 +14,30 @@ jobs:
             with:
               token: ${{ secrets.GITHUB_TOKEN }}
 
-          - name: Get all the branches except default branch
+          - name: Update remote references and fetch
+            run: |
+              git remote set-head origin --auto
+              git fetch --all --prune
+        
+          - name: Debug remote branches
+            run: |
+              echo "Listing remote branches:"
+              git branch -r
+      
+          - name: Get all branches except develop and main
             id: get-branches
             run: |
               DEFAULT_BRANCH=develop  # Replace with your default branch
-              # DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
-              echo "${DEFAULT_BRANCH}"
+              echo "Default branch: $DEFAULT_BRANCH"
+      
+              # Fetching branches excluding develop, main, and HEAD
               BRANCHES=$(git branch -r | grep -vE "origin/($DEFAULT_BRANCH|main|HEAD)" | sed 's@^ *origin/@@')
-              echo "$BRANCHES"
-              BRANCH_LIST=$(echo $BRANCHES | jq -R -s -c 'split("\n") | map(select(length > 0))')
-              echo "$BRANCH_LIST"
-              echo "branches=$BRANCH_LIST" >> "$GITHUB_OUTPUT"
-              echo "${BRANCH_LIST}"
+              echo "Fetched branches: $BRANCHES"  # Log for debugging
+      
+              if [ -z "$BRANCHES" ]; then
+                echo "No branches found matching the criteria."
+                exit 1  # Exit with error if no branches found
+              fi
 
     rebase-branches:
       needs: fetch-branches
@@ -42,6 +54,6 @@ jobs:
         
         - name: Print just names
           run:
-            echo '${{ matrix.branches }}'
+            echo 'Success'
 
 
