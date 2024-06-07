@@ -19,7 +19,7 @@ jobs:
             run: |
               DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
               BRANCHES=$(git branch -r | grep -vE "origin/(develop|main)" | sed 's@^ *origin/@@')
-              BRANCH_LIST=$(echo $BRANCHES | tr '\n' ',' | sed 's/,$//')
+              BRANCH_LIST=$(echo $BRANCHES | jq -R -s -c 'split("\n") | map(select(length > 0))')
               echo "::set-output name=branches::$BRANCH_LIST"
 
     rebase-branches:
@@ -27,7 +27,7 @@ jobs:
       runs-on: ubuntu-latest
       strategy:
         matrix:
-          branch: [${{ fromJSON(needs.fetch-branches.outputs.branches) }}]
+          branch: ${{ fromJSON(needs.fetch-branches.outputs.branches) }}
           
       steps:
         - name: Checkout repository
