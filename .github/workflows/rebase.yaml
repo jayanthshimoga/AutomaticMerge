@@ -18,8 +18,11 @@ jobs:
             id: get-branches
             run: |
               DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+              echo "${DEFAULT_BRANCH}"
               BRANCHES=$(git branch -r | grep -vE "origin/(${DEFAULT_BRANCH}|main)" | sed 's@^ *origin/@@')
+              echo "${BRANCHES}"
               BRANCH_LIST=$(echo ${BRANCHES} | jq -R -s -c 'split("\n") | map(select(length > 0))')
+              echo "${BRANCH_LIST}"
               echo "branches=${BRANCH_LIST}" >> "$GITHUB_OUTPUT"
               echo "${BRANCH_LIST}"
 
