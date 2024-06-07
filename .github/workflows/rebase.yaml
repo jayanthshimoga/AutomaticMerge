@@ -35,7 +35,8 @@ jobs:
                 exit 1 
               fi
 
-              BRANCH_LIST=$(echo $BRANCHES | jq -R -s -c 'split("\n") | map(select(length > 0))')
+              BRANCH_SEPERATED=$(echo $BRANCHES | tr '\n' ',' | sed 's/,$//')
+              BRANCH_LIST=$(echo $BRANCH_SEPERATED | jq -R -s -c 'split("\n") | map(select(length > 0))')
               echo "Branches List: $BRANCH_LIST" 
               echo "branches=$BRANCH_LIST" >> $GITHUB_OUTPUT
 
