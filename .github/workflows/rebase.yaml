@@ -58,8 +58,14 @@ jobs:
           run: |
             BRANCH=$(echo "${{ matrix.branch }}" | sed 's/[[:space:]]*$//')
             echo "branch: $BRANCH"
-            git checkout $BRANCH
-            PARENT_BRANCH = $(git show-branch | grep '*' | grep -v "$(git rev-parse --abbrev-ref HEAD)" | head -n1 | sed 's/.*\[\(.*\)\].*/\1/' | sed 's/[\^~].*//')
-            echo "parent_branch: $PARENT_BRANCH"
+            PARENT_BRANCH=$(git log --pretty=%P -n 1 origin/$BRANCH | awk '{print $1}')
+            PARENT_BRANCH_NAME=$(git branch -r --contains $PARENT_BRANCH | grep -vE "origin/(${BRANCH}|develop|main)" | sed 's@^ *origin/@@' | head -n 1)
+            
+            echo "Detected parent branch for $BRANCH: $PARENT_BRANCH_NAME"
+
+# 
+# git checkout $BRANCH
+# PARENT_BRANCH = $(git show-branch | grep '*' | grep -v "$(git rev-parse --abbrev-ref HEAD)" | head -n1 | sed 's/.*\[\(.*\)\].*/\1/' | sed 's/[\^~].*//')
+# echo "parent_branch: $PARENT_BRANCH"
 
 
