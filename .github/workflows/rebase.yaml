@@ -37,7 +37,7 @@ jobs:
 
               BRANCH_SEPERATED=$(echo $BRANCHES | tr ' \n' ',' | sed 's/,$//')
               echo "$BRANCH_SEPERATED"
-              BRANCH_LIST=$(echo $BRANCH_SEPERATED | jq -R -s -c 'split(",") | map(gsub("^ +| +$";"")) | map(select(length > 0))')
+              BRANCH_LIST=$(echo $BRANCH_SEPERATED | jq -R -s -c 'split(",") | map(gsub("^[[:space:]]+|[[:space:]]+$";"")) | map(select(length > 0))' | sed 's/\\n//g')
               echo "Branches List: $BRANCH_LIST" 
               echo "branches=$BRANCH_LIST" >> $GITHUB_OUTPUT
 
