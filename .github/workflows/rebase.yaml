@@ -56,7 +56,7 @@ jobs:
         
         - name: Print just names
           run: |
-            BRANCH=${{ matrix.branch }}
+            BRANCH=${{ matrix.branch }} | tr -d '[:space:]' 
             echo "branch: $BRANCH"
 
 
