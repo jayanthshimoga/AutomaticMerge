@@ -35,7 +35,8 @@ jobs:
                 exit 1 
               fi
 
-              BRANCH_SEPERATED=$(echo $BRANCHES | tr ' \n' ',' | sed 's/,$//')
+              BRANCH_CLEANED=$(echo "$BRANCHES" | tr -d '[:space:]' | tr '\n' ',')
+              BRANCH_SEPARATED=$(echo "$BRANCH_CLEANED" | sed 's/,$//')
               echo "$BRANCH_SEPERATED"
               BRANCH_LIST=$(echo $BRANCH_SEPERATED | jq -R -s -c 'split(",") | map(select(length > 0))')
               echo "Branches List: $BRANCH_LIST" 
