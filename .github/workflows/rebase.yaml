@@ -35,9 +35,9 @@ jobs:
                 exit 1 
               fi
 
-              BRANCH_CLEANED=$(echo "$BRANCHES" | tr -d '[:space:]' | tr '\n' ',')
+              BRANCH_CLEANED=$(echo "$BRANCHES" | tr -d '[:space:]' | tr ' \n' ',')
               BRANCH_SEPARATED=$(echo "$BRANCH_CLEANED" | sed 's/,$//')
-              echo "$BRANCH_SEPERATED"
+              echo "Comma-separated branches: $BRANCH_SEPARATED"
               BRANCH_LIST=$(echo $BRANCH_SEPERATED | jq -R -s -c 'split(",") | map(select(length > 0))')
               echo "Branches List: $BRANCH_LIST" 
               echo "branches=$BRANCH_LIST" >> $GITHUB_OUTPUT
