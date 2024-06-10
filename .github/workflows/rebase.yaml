@@ -56,9 +56,9 @@ jobs:
         
         - name: Print just names
           run: |
-            BRANCH=$(echo "${{ matrix.branch }}" | sed 's/[[:space:]]*$//')
-            echo "branch: $BRANCH"
-            POTENTIAL_PARENTS=$(git for-each-ref --format='%(refname:short)' refs/heads/ | grep -v "^$BRANCH$")
+            CURRENT_BRANCH=$(echo "${{ matrix.branch }}" | sed 's/[[:space:]]*$//')
+            echo "branch: $CURRENT_BRANCH"
+            POTENTIAL_PARENTS=$(git for-each-ref --format='%(refname:short)' refs/heads/ | grep -v "^$CURRENT_BRANCH$")
 
             # Find the most recent common ancestor for each potential parent branch
             BEST_PARENT=""
