@@ -57,30 +57,50 @@ jobs:
         - name: Print just names
           run: |
             CURRENT_BRANCH=$(echo "${{ matrix.branch }}" | sed 's/[[:space:]]*$//')
-            echo "branch: $CURRENT_BRANCH"
-            POTENTIAL_PARENTS=$(git for-each-ref --format='%(refname:short)' refs/heads/ | grep -v "^$CURRENT_BRANCH$")
+            echo "Finding exact parent branch for $CURRENT_BRANCH..."
 
-            # Find the most recent common ancestor for each potential parent branch
-            BEST_PARENT=""
-            BEST_BASE=""
-            for PARENT in $POTENTIAL_PARENTS; do
-              MERGE_BASE=$(git merge-base $CURRENT_BRANCH $PARENT)
-              echo "Common ancestor of $CURRENT_BRANCH and $PARENT is $MERGE_BASE"
+            # Function to find the closest parent branch
+            find_parent_branch() {
+              local current_branch=$1
+              local potential_parents=($2)
+              local best_parent=""
+              local best_base=""
+              local earliest_date=""
 
-              # Initialize or update the best parent branch
-              if [ -z "$BEST_BASE" ] || git log --oneline $MERGE_BASE..$CURRENT_BRANCH | grep -q '.'; then
-                BEST_PARENT=$PARENT
-                BEST_BASE=$MERGE_BASE
+              for parent in "${potential_parents[@]}"; do
+                merge_base=$(git merge-base "$current_branch" "$parent")
+                
+                if [ -z "$merge_base" ]; then
+                  continue
+                fi
+
+                merge_base_date=$(git show -s --format=%ci "$merge_base")
+
+                if [ -z "$earliest_date" ] || [[ "$merge_base_date" > "$earliest_date" ]]; then
+                  best_parent="$parent"
+                  best_base="$merge_base"
+                  earliest_date="$merge_base_date"
+                fi
+              done
+
+              if [ -n "$best_parent" ]; then
+                echo "$best_parent"
+              else
+                echo "No parent branch found for $current_branch"
+                exit 1
               fi
-            done
+            }
 
-            if [ -z "$BEST_PARENT" ]; then
-              echo "No parent branch found for $CURRENT_BRANCH"
-              exit 1
-            else
-              echo "Best parent branch for $CURRENT_BRANCH is $BEST_PARENT"
-              echo "parent_branch=$BEST_PARENT" >> $GITHUB_ENV
-            fi
+            # Get the list of all branches except the current one
+            POTENTIAL_PARENTS=$(git for-each-ref --format='%(refname:short)' refs/heads/ | grep -v "^$CURRENT_BRANCH$")
+            
+            # Convert potential parents to array
+            POTENTIAL_PARENTS_ARRAY=($POTENTIAL_PARENTS)
+
+            # Find the exact parent branch
+            EXACT_PARENT_BRANCH=$(find_parent_branch "$CURRENT_BRANCH" "${POTENTIAL_PARENTS_ARRAY[@]}")
+            echo "Exact parent branch for $CURRENT_BRANCH is $EXACT_PARENT_BRANCH"
+            echo "parent_branch=$EXACT_PARENT_BRANCH" >> $GITHUB_ENV
 # PARENT_BRANCH=$(git log --pretty=%P -n 1 origin/$BRANCH | awk '{print $1}')
 # PARENT_BRANCH_NAME=$(git branch -r --contains $PARENT_BRANCH | grep -vE "origin/(${BRANCH}|develop|main)" | sed 's@^ *origin/@@' | head -n 1)
 
