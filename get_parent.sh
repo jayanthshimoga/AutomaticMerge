@@ -2,7 +2,7 @@
 git fetch --all --prune
 
 # Ensure the branch exists
-CURRENT_BRANCH="rebase-1"
+CURRENT_BRANCH="origin/rebase-child-1"
 if ! git rev-parse --verify $CURRENT_BRANCH >/dev/null 2>&1; then
   echo "Branch $CURRENT_BRANCH does not exist."
   exit 1

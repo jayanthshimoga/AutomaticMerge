@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set the current branch
-CURRENT_BRANCH=$(echo "feature-child1" | sed 's/[[:space:]]*$//')
+CURRENT_BRANCH=$(echo "origin/rebase-child-1" | sed 's/[[:space:]]*$//')
 
 # Ensure the branch name is valid and exists
 if ! git rev-parse --verify "$CURRENT_BRANCH" >/dev/null 2>&1; then
