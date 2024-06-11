@@ -12,6 +12,7 @@ fi
 POTENTIAL_PARENTS=$(git for-each-ref --format='%(refname:short)' refs/heads/ | grep -v "^$CURRENT_BRANCH$")
 echo "Potential parent branches: $POTENTIAL_PARENTS"
 
+# Test1
 BEST_PARENT=""
 BEST_BASE=""
 for PARENT in $POTENTIAL_PARENTS; do
