@@ -6,6 +6,7 @@ set -e
 # Fetch all branches from the remote
 git fetch --all
 
+#test
 # Define the current branch
 CURRENT_BRANCH="feature-rebase1-child2"  # Replace this with your current branch or make it dynamic
 
