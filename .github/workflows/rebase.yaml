@@ -67,16 +67,4 @@ jobs:
           run: |
             CURRENT_BRANCH=$(echo "${{ matrix.branch }}" | sed 's/[[:space:]]*$//')
             echo "Finding exact parent branch for ${{ matrix.branch }}..."
-            git checkout -b "$CURRENT_BRANCH" "origin/$CURRENT_BRANCH" || git checkout "$CURRENT_BRANCH"
-
-            # Fetch all branches to ensure we have the latest
-            git fetch --all
-
-            # Debug: list branches
-            echo "Current branch: $(git rev-parse --abbrev-ref HEAD)"
-            echo "All branches:"
-            git branch -a
-
-            # Get all branches except the current one
-            POTENTIAL_PARENTS=$(git show-branch | grep '*' | grep -v "$(git rev-parse --abbrev-ref HEAD)" | head -n1 | sed 's/.*\[\(.*\)\].*/\1/' | sed 's/[\^~].*//')
-            echo "$POTENTIAL_PARENTS"
+            bash get_parent.sh ${{ matrix.branch }}
