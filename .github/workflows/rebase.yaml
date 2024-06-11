@@ -54,14 +54,15 @@ jobs:
           with:
             token: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: List branches
-          run: |
-            git branch -r
 
         - name: Update remote references and fetch
           run: |
             git remote set-head origin --auto
-            git fetch --all --prune
+            git fetch --all
+
+        - name: List branches
+          run: |
+            git branch -r
         
         - name: Print just names
           run: |
