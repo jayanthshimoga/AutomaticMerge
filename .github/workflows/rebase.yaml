@@ -53,6 +53,15 @@ jobs:
           uses: actions/checkout@v2
           with:
             token: ${{ secrets.GITHUB_TOKEN }}
+
+        - name: Update remote references and fetch
+          run: |
+            git remote set-head origin --auto
+            git fetch --all --prune
+    
+        - name: List branches
+          run: |
+            git branch -r
         
         - name: Print just names
           run: |
