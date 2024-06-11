@@ -57,8 +57,8 @@ jobs:
         - name: Print just names
           run: |
             CURRENT_BRANCH=$(echo "${{ matrix.branch }}" | sed 's/[[:space:]]*$//')
-            echo "Finding exact parent branch for $CURRENT_BRANCH..."
-            git checkout $CURRENT_BRANCH
+            echo "Finding exact parent branch for ${CURRENT_BRANCH}..."
+            git checkout ${CURRENT_BRANCH}
             PARENT_BRANCH = $(git show-branch -a | sed "s/].*//" | grep "\*" | grep -v "$(git rev-parse --abbrev-ref HEAD)" | head -n1 | sed "s/^.*\[//")
             echo "parent_branch: $PARENT_BRANCH"
 
