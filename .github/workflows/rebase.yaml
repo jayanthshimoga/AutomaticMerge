@@ -58,7 +58,6 @@ jobs:
         - name: Update remote references and fetch
           run: |
             git remote set-head origin --auto
-            git fetch --all
 
         - name: List branches
           run: |
