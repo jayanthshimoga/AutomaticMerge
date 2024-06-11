@@ -55,9 +55,10 @@ jobs:
             token: ${{ secrets.GITHUB_TOKEN }}
 
 
-        - name: Update remote references and fetch
-          run: |
-            git remote set-head origin --auto
+        # - name: Update remote references and fetch
+        #   run: |
+        #     git remote set-head origin --auto
+        #     git fetch --all
 
         - name: List branches
           run: |
@@ -67,6 +68,7 @@ jobs:
           run: |
             CURRENT_BRANCH=$(echo "${{ matrix.branch }}" | sed 's/[[:space:]]*$//')
             echo "Finding exact parent branch for ${{ matrix.branch }}..."
+            git fetch origin ${{ matrix.branch }}
             git checkout ${{ matrix.branch }}
             PARENT_BRANCH=$(git show-branch -a | sed "s/].*//" | grep "\*" | grep -v "$(git rev-parse --abbrev-ref HEAD)" | head -n1 | sed "s/^.*\[//")
             echo "parent_branch: $PARENT_BRANCH"
