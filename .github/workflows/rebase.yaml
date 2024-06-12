@@ -72,11 +72,11 @@ jobs:
             CLOSEST_MERGE_BASE=""
 
             # Fetch all remote branches
-            git fetch origin ${{ matrix.branch }}:${{ matrix.branch }}
+            git fetch origin
 
             # Loop through all branches and find the closest merge base
             for BRANCH in $(git for-each-ref --format '%(refname:short)' refs/remotes/origin); do
-              if [ "$BRANCH" != "origin/${{ matrix.branch }}" ]; then
+              if [ "$BRANCH" != "${{ matrix.branch }}" ]; then
                 MERGE_BASE=$(git merge-base ${{ matrix.branch }} $BRANCH)
 
                 # Check if the current branch is the closest match
