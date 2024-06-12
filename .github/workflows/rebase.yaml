@@ -88,7 +88,7 @@ jobs:
               if [ "$BRANCH" != "origin/${{ matrix.branch }}" ]; then
                 if [ "$BRANCH" = "origin/develop" ] || [ "$TARGET_BRANCH" = "refs/remotes/origin/develop" ]; then
                   echo "Special handling for 'develop' branch..."
-                  MERGE_BASE=$(git merge-base $TARGET_BRANCH refs/remotes/origin/develop) || { echo "Failed to find merge base with develop"; continue; }
+                  MERGE_BASE=$(git merge-base $TARGET_BRANCH origin/develop) || { echo "_--_Failed to find merge base with develop"; continue; }
                 else
                   echo "Calculating merge base between $TARGET_BRANCH and $BRANCH..."
                   MERGE_BASE=$(git merge-base $TARGET_BRANCH $BRANCH) || { echo "Failed to find merge base with $BRANCH"; continue; }
