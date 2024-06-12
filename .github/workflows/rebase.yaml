@@ -74,23 +74,26 @@ jobs:
         - name: Print just names
           run: |
             echo "Finding exact parent branch for ${{ matrix.branch }}..."
-         
+            
             PARENT_BRANCH=""
             CLOSEST_MERGE_BASE=""
+            
+            # Explicitly reference the remote branch
+            TARGET_BRANCH="refs/remotes/origin/${{ matrix.branch }}"
 
-            # Loop through all branches and find the closest merge base
+            # Loop through all remote branches and find the closest merge base
             for BRANCH in $(git for-each-ref --format '%(refname:short)' refs/remotes/origin); do
-              if [ "$BRANCH" != "${{ matrix.branch }}" ]; then
-                MERGE_BASE=$(git merge-base ${{ matrix.branch }} $BRANCH)
-
+              if [ "$BRANCH" != "$TARGET_BRANCH" ]; then
+                MERGE_BASE=$(git merge-base $TARGET_BRANCH $BRANCH)
+                
                 # Check if the current branch is the closest match
-                if [ -z "$CLOSEST_MERGE_BASE" ] || [ "$(git rev-list --count $MERGE_BASE..${{ matrix.branch }})" -lt "$(git rev-list --count $CLOSEST_MERGE_BASE..$CURRENT_BRANCH)" ]; then
+                if [ -z "$CLOSEST_MERGE_BASE" ] || [ "$(git rev-list --count $MERGE_BASE..$TARGET_BRANCH)" -lt "$(git rev-list --count $CLOSEST_MERGE_BASE..$TARGET_BRANCH)" ]; then
                   CLOSEST_MERGE_BASE=$MERGE_BASE
                   PARENT_BRANCH=$BRANCH
                 fi
               fi
             done
-
+            
             # Output the parent branch
             echo "Immediate parent branch is: $PARENT_BRANCH"
             echo "parent-branch=$PARENT_BRANCH" >> $GITHUB_ENV
