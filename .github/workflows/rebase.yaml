@@ -99,7 +99,7 @@ jobs:
 
             # Loop through all remote branches and find the closest merge base
             echo "Iterating through remote branches..."
-            git for-each-ref --format='%(refname:short)' refs/remotes/origin | while read -r BRANCH; do
+            for BRANCH in $(git for-each-ref --format '%(refname:short)' refs/remotes/origin); do
               echo "Checking branch: $BRANCH"
               if [ "$BRANCH" != "${{ matrix.branch }}" ]; then
                 # Check if either branch is 'develop' and handle accordingly
