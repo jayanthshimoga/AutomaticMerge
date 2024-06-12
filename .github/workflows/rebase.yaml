@@ -89,26 +89,26 @@ jobs:
         
         - name: Print just names
           run: |
-            echo "Finding exact parent branch for ${{ matrix.branch }}..."
+            echo "Finding exact parent branch for ${{ matrix.branch }} ..."
 
             PARENT_BRANCH=""  # Initialize parent branch variable
             CLOSEST_MERGE_BASE=""  # Initialize closest merge base variable
-            LEAST_COMMITS=0  # Initialize least commits counter
+            LEAST_COMMITS=""  # Initialize least commits counter as empty
 
             # Explicitly reference the remote branch
-            TARGET_BRANCH="refs/remotes/origin/${{ matrix.branch }}"  # Set target branch as ${{ matrix.branch }}
+            TARGET_BRANCH="refs/remotes/origin/${{ matrix.branch }} "  # Set target branch as ${{ matrix.branch }} 
 
             # Get the timestamp of the target branch
             TIMESTAMP_TARGET=$(git log -1 --format="%ct" $TARGET_BRANCH)
 
             # Loop through all remote branches and find the closest merge base
             echo "Iterating through remote branches..."
-            git for-each-ref --format='%(refname:short)' refs/remotes/origin | while read -r BRANCH; do
+            for BRANCH in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin); do
               echo "Checking branch: $BRANCH"
-              if [ "$BRANCH" != "origin/${{ matrix.branch }}" ]; then  # Ensure we are not comparing the branch to itself
+              if [ "$BRANCH" != "origin/${{ matrix.branch }} " ]; then  # Ensure we are not comparing the branch to itself
 
                 # Special handling for 'develop' branch
-                if [ "$BRANCH" = "origin/develop" ] || [ "$TARGET_BRANCH" = "refs/remotes/origin/develop" ]; then
+                if [ "$BRANCH" = "origin/develop" ]; then
                   echo "Special handling for 'develop' branch..."
                   MERGE_BASE=$(git merge-base $TARGET_BRANCH refs/remotes/origin/develop) || { echo "Failed to find merge base with develop"; continue; }
                 else
@@ -120,9 +120,12 @@ jobs:
                 if [ -n "$MERGE_BASE" ]; then
                   # Calculate the number of commits from the merge base to the target branch
                   COMMITS_COUNT=$(git rev-list --count $MERGE_BASE..$TARGET_BRANCH)
+                  
+                  # Output debugging information
+                  echo "Merge base: $MERGE_BASE, Commits count: $COMMITS_COUNT"
 
-                  # If it's the first comparison or if the current branch has fewer commits since the merge base, update
-                  if [ -z "$CLOSEST_MERGE_BASE" ] || [ $COMMITS_COUNT -lt $LEAST_COMMITS ]; then
+                  # Check if it's the first comparison or if the current branch has fewer commits since the merge base, update
+                  if [ -z "$CLOSEST_MERGE_BASE" ] || [ "$COMMITS_COUNT" -lt "$LEAST_COMMITS" ]; then
                     CLOSEST_MERGE_BASE=$MERGE_BASE
                     PARENT_BRANCH=$BRANCH
                     LEAST_COMMITS=$COMMITS_COUNT
@@ -139,7 +142,7 @@ jobs:
 
             # Output the parent branch
             echo "Immediate parent branch is: $PARENT_BRANCH"
-            echo "parent-branch=$PARENT_BRANCH" >> $GITHUB_ENV
+            echo "parent-branch=$PARENT_BRANCH"
 # echo "Finding exact parent branch for ${{ matrix.branch }}..."
 
 # PARENT_BRANCH=""
