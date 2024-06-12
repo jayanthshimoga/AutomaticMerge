@@ -71,14 +71,12 @@ jobs:
           run: |
             git branch -r
 
-          - name: Determine Parent Branch
-          env:
-            BRANCH_NAME: ${{ github.ref_name }}  # This gets the current branch name
+        - name: Determine Parent Branch
           run: |
             #!/bin/bash
             set -e
   
-            echo "Current Branch: ${BRANCH_NAME}"
+            echo "Current Branch: ${{ matrix.branch }}"
   
             # Function to find parent branch
             find_parent_branch() {
@@ -94,11 +92,11 @@ jobs:
               done
             }
   
-            parent_branch=$(find_parent_branch "${BRANCH_NAME}")
+            parent_branch=$(find_parent_branch "${{ matrix.branch }}")
             if [ -z "$parent_branch" ]; then
-              echo "No parent branch found for ${BRANCH_NAME}"
+              echo "No parent branch found for ${{ matrix.branch }}"
             else
-              echo "Parent branch of ${BRANCH_NAME} is ${parent_branch}"
+              echo "Parent branch of ${{ matrix.branch }} is ${parent_branch}"
             fi
         
         - name: Print just names
