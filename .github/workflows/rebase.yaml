@@ -66,7 +66,6 @@ jobs:
         
         - name: Print just names
           run: |
-            CURRENT_BRANCH=$(echo "${{ matrix.branch }}" | sed 's/[[:space:]]*$//')
             echo "Finding exact parent branch for ${{ matrix.branch }}..."
          
             PARENT_BRANCH=""
@@ -77,11 +76,11 @@ jobs:
 
             # Loop through all branches and find the closest merge base
             for BRANCH in $(git for-each-ref --format '%(refname:short)' refs/remotes/origin); do
-              if [ "$BRANCH" != "origin/$CURRENT_BRANCH" ]; then
-                MERGE_BASE=$(git merge-base $CURRENT_BRANCH $BRANCH)
+              if [ "$BRANCH" != "origin/${{ matrix.branch }}" ]; then
+                MERGE_BASE=$(git merge-base ${{ matrix.branch }} $BRANCH)
 
                 # Check if the current branch is the closest match
-                if [ -z "$CLOSEST_MERGE_BASE" ] || [ "$(git rev-list --count $MERGE_BASE..$CURRENT_BRANCH)" -lt "$(git rev-list --count $CLOSEST_MERGE_BASE..$CURRENT_BRANCH)" ]; then
+                if [ -z "$CLOSEST_MERGE_BASE" ] || [ "$(git rev-list --count $MERGE_BASE..${{ matrix.branch }})" -lt "$(git rev-list --count $CLOSEST_MERGE_BASE..$CURRENT_BRANCH)" ]; then
                   CLOSEST_MERGE_BASE=$MERGE_BASE
                   PARENT_BRANCH=$BRANCH
                 fi
