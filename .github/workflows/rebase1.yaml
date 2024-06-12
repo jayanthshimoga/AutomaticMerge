@@ -75,6 +75,27 @@ jobs:
         - name: Print just names
           run: |
             git checkout ${{ matrix.branch }}
-            PARENT_BRANCH=$(git show-branch -a | sed "s/].*//" | grep "\*" | grep -v "$(git rev-parse --abbrev-ref HEAD)" | head -n1 | sed "s/^.*\[//")
+            git fetch origin
+            CURRENT_BRANCH=${{ matrix.branch }}
+            # Assuming 'develop' or 'main' as potential parent branches
+            POTENTIAL_PARENTS=("develop" "main")
+            PARENT_BRANCH=""
+        
+            for BRANCH in "${POTENTIAL_PARENTS[@]}"; do
+                if git show-ref --verify --quiet refs/remotes/origin/$BRANCH; then
+                MERGE_BASE=$(git merge-base origin/$CURRENT_BRANCH origin/$BRANCH)
+                if [ "$(git log -1 --pretty=%H origin/$BRANCH)" = "$MERGE_BASE" ]; then
+                    PARENT_BRANCH=$BRANCH
+                    break
+                fi
+                fi
+            done
+        
+            if [ -z "$PARENT_BRANCH" ]; then
+                echo "No parent branch found. Defaulting to 'develop'."
+                PARENT_BRANCH="develop"
+            fi
+        
             echo "parent_branch: $PARENT_BRANCH"
+            echo "PARENT_BRANCH=$PARENT_BRANCH"
         
