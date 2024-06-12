@@ -77,25 +77,20 @@ jobs:
             git checkout ${{ matrix.branch }}
             git fetch origin
             CURRENT_BRANCH=${{ matrix.branch }}
-            # Assuming 'develop' or 'main' as potential parent branches
-            POTENTIAL_PARENTS=["develop","main"]
-            PARENT_BRANCH=""
         
-            for BRANCH in "${POTENTIAL_PARENTS}"; do
-                if git show-ref --verify --quiet refs/remotes/origin/$BRANCH; then
-                MERGE_BASE=$(git merge-base origin/$CURRENT_BRANCH origin/$BRANCH)
-                if [ "$(git log -1 --pretty=%H origin/$BRANCH)" = "$MERGE_BASE" ]; then
-                    PARENT_BRANCH=$BRANCH
-                    break
-                fi
+            # Potential parent branches to check against
+            PARENT_CANDIDATES=$(git branch -r | grep -vE "origin/(HEAD|${CURRENT_BRANCH})" | sed 's@^ *origin/@@')
+            CLOSEST_PARENT=""
+            CLOSEST_PARENT_COMMIT=""
+        
+            for CANDIDATE in $PARENT_CANDIDATES; do
+                BASE_COMMIT=$(git merge-base origin/$CURRENT_BRANCH origin/$CANDIDATE)
+                if [ -z "$CLOSEST_PARENT_COMMIT" ] || [ "$(git rev-list --count $BASE_COMMIT..origin/$CURRENT_BRANCH)" -lt "$(git rev-list --count $CLOSEST_PARENT_COMMIT..origin/$CURRENT_BRANCH)" ]; then
+                CLOSEST_PARENT=$CANDIDATE
+                CLOSEST_PARENT_COMMIT=$BASE_COMMIT
                 fi
             done
         
-            if [ -z "$PARENT_BRANCH" ]; then
-                echo "No parent branch found. Defaulting to 'develop'."
-                PARENT_BRANCH="develop"
-            fi
-        
-            echo "parent_branch: $PARENT_BRANCH"
-            echo "PARENT_BRANCH=$PARENT_BRANCH"
+            echo "parent_branch: $CLOSEST_PARENT"
+            echo "PARENT_BRANCH=$CLOSEST_PARENT"
         
