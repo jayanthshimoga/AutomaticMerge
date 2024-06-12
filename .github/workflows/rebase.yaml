@@ -108,14 +108,16 @@ jobs:
                   MERGE_BASE=$(git merge-base $TARGET_BRANCH refs/remotes/origin/develop) || { echo "Failed to find merge base with develop"; continue; }
                 else
                   echo "Calculating merge base between $TARGET_BRANCH and $BRANCH..."
-                  # Calculate merge base based on commit timestamps
-                  TIMESTAMP_TARGET=$(git log -1 --format="%ct" $TARGET_BRANCH)
-                  TIMESTAMP_BRANCH=$(git log -1 --format="%ct" $BRANCH)
-                  if [ "$TIMESTAMP_TARGET" -gt "$TIMESTAMP_BRANCH" ]; then
-                      MERGE_BASE=$(git log -1 --format="%H" $TARGET_BRANCH)
-                  else
-                      MERGE_BASE=$(git log -1 --format="%H" $BRANCH)
-                  fi
+                  MERGE_BASE=$(git merge-base $TARGET_BRANCH $BRANCH) || { echo "Failed to find merge base with $BRANCH"; continue; }
+                fi
+                echo "Calculating merge base between $TARGET_BRANCH and $BRANCH..."
+                # Calculate merge base based on commit timestamps
+                TIMESTAMP_TARGET=$(git log -1 --format="%ct" $TARGET_BRANCH)
+                TIMESTAMP_BRANCH=$(git log -1 --format="%ct" $BRANCH)
+                if [ "$TIMESTAMP_TARGET" -gt "$TIMESTAMP_BRANCH" ]; then
+                    MERGE_BASE=$(git log -1 --format="%H" $TARGET_BRANCH)
+                else
+                    MERGE_BASE=$(git log -1 --format="%H" $BRANCH)
                 fi
 
                 # Check if the current branch is the closest match
@@ -134,6 +136,43 @@ jobs:
             # Output the parent branch
             echo "Immediate parent branch is: $PARENT_BRANCH"
             echo "parent-branch=$PARENT_BRANCH" >> $GITHUB_ENV
+# echo "Finding exact parent branch for ${{ matrix.branch }}..."
+
+# PARENT_BRANCH=""
+# CLOSEST_MERGE_BASE=""
+
+# # Explicitly reference the remote branch
+# TARGET_BRANCH="refs/remotes/origin/${{ matrix.branch }}"
+
+# # Loop through all remote branches and find the closest merge base
+# echo "Iterating through remote branches..."
+# for BRANCH in $(git for-each-ref --format '%(refname:short)' refs/remotes/origin); do
+#   echo "Checking branch: $BRANCH"
+#   if [ "$BRANCH" != "origin/${{ matrix.branch }}" ]; then
+#     if [ "$BRANCH" = "origin/develop" ] || [ "$TARGET_BRANCH" = "refs/remotes/origin/develop" ]; then
+#       echo "Special handling for 'develop' branch..."
+#       MERGE_BASE=$(git merge-base $TARGET_BRANCH origin/develop) || { echo "_--_Failed to find merge base with develop"; continue; }
+#     else
+#       echo "Calculating merge base between $TARGET_BRANCH and $BRANCH..."
+#       MERGE_BASE=$(git merge-base $TARGET_BRANCH $BRANCH) || { echo "Failed to find merge base with $BRANCH"; continue; }
+#     fi
+
+#     # Check if the current branch is the closest match
+#     if [ -z "$CLOSEST_MERGE_BASE" ] || [ "$(git rev-list --count $MERGE_BASE..$TARGET_BRANCH)" -lt "$(git rev-list --count $CLOSEST_MERGE_BASE..$TARGET_BRANCH)" ]; then
+#       CLOSEST_MERGE_BASE=$MERGE_BASE
+#       PARENT_BRANCH=$BRANCH
+#     fi
+#   fi
+# done
+
+# if [ -z "$PARENT_BRANCH" ]; then
+#   echo "No parent branch found. Exiting with error."
+#   exit 1
+# fi
+
+# # Output the parent branch
+# echo "Immediate parent branch is: $PARENT_BRANCH"
+# echo "parent-branch=$PARENT_BRANCH" >> $GITHUB_ENV
   # git fetch origin
   # git reset --hard origin/develop
   # git clean -f -d
