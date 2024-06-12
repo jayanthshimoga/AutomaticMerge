@@ -71,21 +71,35 @@ jobs:
           run: |
             git branch -r
 
-        # - name: Debug merge base
-        #   run: |
-        #     echo "Debugging merge base for develop branch..."
-        #     echo "Commit history for ${{ matrix.branch }}:"
-        #     git log --oneline -5 refs/remotes/origin/${{ matrix.branch }}
-        
-        #     echo "Commit history for develop:"
-        #     git log --oneline -5 refs/remotes/origin/develop
-        
-        #     echo "Trying to find common ancestors manually..."
-        #     git rev-list --all | grep $(git rev-parse refs/remotes/origin/develop)
-        #     git rev-list --all | grep $(git rev-parse refs/remotes/origin/${{ matrix.branch }})
-        
-        #     echo "Finding merge base directly..."
-        #     git merge-base refs/remotes/origin/${{ matrix.branch }} refs/remotes/origin/develop
+          - name: Determine Parent Branch
+          env:
+            BRANCH_NAME: ${{ github.ref_name }}  # This gets the current branch name
+          run: |
+            #!/bin/bash
+            set -e
+  
+            echo "Current Branch: ${BRANCH_NAME}"
+  
+            # Function to find parent branch
+            find_parent_branch() {
+              local branch=$1
+              for parent in $(git for-each-ref --format='%(refname:short)' refs/heads/); do
+                if [ "$branch" != "$parent" ]; then
+                  # Check if parent is an ancestor of branch
+                  if git merge-base --is-ancestor "$parent" "$branch"; then
+                    echo "$parent"
+                    return
+                  fi
+                fi
+              done
+            }
+  
+            parent_branch=$(find_parent_branch "${BRANCH_NAME}")
+            if [ -z "$parent_branch" ]; then
+              echo "No parent branch found for ${BRANCH_NAME}"
+            else
+              echo "Parent branch of ${BRANCH_NAME} is ${parent_branch}"
+            fi
         
         - name: Print just names
           run: |
@@ -128,19 +142,7 @@ jobs:
                   fi                
                 fi
 
-                # if [ -n "$MERGE_BASE" ]; then
-                #   COMMITS_COUNT=$(git rev-list --count $MERGE_BASE..$TARGET_BRANCH)
-                #   echo "Merge base: $MERGE_BASE, Commits count: $COMMITS_COUNT"
 
-                #   # Check if it's the first comparison or if the current branch has fewer commits since the merge base, update
-                #   if [ -z "$CLOSEST_MERGE_BASE" ] || [ "$COMMITS_COUNT" -lt "$LEAST_COMMITS" ]; then
-                #     CLOSEST_MERGE_BASE=$MERGE_BASE
-                #     PARENT_BRANCH=$BRANCH
-                #     LEAST_COMMITS=$COMMITS_COUNT
-                #     echo "Updated closest merge base to $CLOSEST_MERGE_BASE with parent branch $PARENT_BRANCH"
-                #   fi
-                # fi
-                
                 if [ -z "$CLOSEST_MERGE_BASE" ] || [ "$(git rev-list --count $MERGE_BASE..$TARGET_BRANCH)" -lt "$(git rev-list --count $CLOSEST_MERGE_BASE..$TARGET_BRANCH)" ]; then
                   CLOSEST_MERGE_BASE=$MERGE_BASE
                   PARENT_BRANCH=$BRANCH
