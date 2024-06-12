@@ -106,19 +106,29 @@ jobs:
                 if [ "$BRANCH" = "origin/develop" ] || [ "$TARGET_BRANCH" = "refs/remotes/origin/develop" ]; then
                   echo "Special handling for 'develop' branch..."
                   MERGE_BASE=$(git merge-base $TARGET_BRANCH refs/remotes/origin/develop) || { echo "Failed to find merge base with develop"; continue; }
+                  echo "Calculating merge base between $TARGET_BRANCH and $BRANCH..."
+                  # Calculate merge base based on commit timestamps
+                  TIMESTAMP_TARGET=$(git log -1 --format="%ct" $TARGET_BRANCH)
+                  TIMESTAMP_BRANCH=$(git log -1 --format="%ct" $BRANCH)
+                  if [ "$TIMESTAMP_TARGET" -gt "$TIMESTAMP_BRANCH" ]; then
+                      MERGE_BASE=$(git log -1 --format="%H" $TARGET_BRANCH)
+                  else
+                      MERGE_BASE=$(git log -1 --format="%H" $BRANCH)
+                  fi
                 else
                   echo "Calculating merge base between $TARGET_BRANCH and $BRANCH..."
                   MERGE_BASE=$(git merge-base $TARGET_BRANCH $BRANCH) || { echo "Failed to find merge base with $BRANCH"; continue; }
+                  echo "Calculating merge base between $TARGET_BRANCH and $BRANCH..."
+                  # Calculate merge base based on commit timestamps
+                  TIMESTAMP_TARGET=$(git log -1 --format="%ct" $TARGET_BRANCH)
+                  TIMESTAMP_BRANCH=$(git log -1 --format="%ct" $BRANCH)
+                  if [ "$TIMESTAMP_TARGET" -gt "$TIMESTAMP_BRANCH" ]; then
+                      MERGE_BASE=$(git log -1 --format="%H" $TARGET_BRANCH)
+                  else
+                      MERGE_BASE=$(git log -1 --format="%H" $BRANCH)
+                  fi
                 fi
-                echo "Calculating merge base between $TARGET_BRANCH and $BRANCH..."
-                # Calculate merge base based on commit timestamps
-                TIMESTAMP_TARGET=$(git log -1 --format="%ct" $TARGET_BRANCH)
-                TIMESTAMP_BRANCH=$(git log -1 --format="%ct" $BRANCH)
-                if [ "$TIMESTAMP_TARGET" -gt "$TIMESTAMP_BRANCH" ]; then
-                    MERGE_BASE=$(git log -1 --format="%H" $TARGET_BRANCH)
-                else
-                    MERGE_BASE=$(git log -1 --format="%H" $BRANCH)
-                fi
+                
 
                 # Check if the current branch is the closest match
                 if [ -z "$CLOSEST_MERGE_BASE" ] || [ "$(git rev-list --count $MERGE_BASE..$TARGET_BRANCH)" -lt "$(git rev-list --count $CLOSEST_MERGE_BASE..$TARGET_BRANCH)" ]; then
