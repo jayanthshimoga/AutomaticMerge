@@ -71,21 +71,21 @@ jobs:
           run: |
             git branch -r
 
-        - name: Debug merge base
-          run: |
-            echo "Debugging merge base for develop branch..."
-            echo "Commit history for ${{ matrix.branch }}:"
-            git log --oneline -5 refs/remotes/origin/${{ matrix.branch }}
+        # - name: Debug merge base
+        #   run: |
+        #     echo "Debugging merge base for develop branch..."
+        #     echo "Commit history for ${{ matrix.branch }}:"
+        #     git log --oneline -5 refs/remotes/origin/${{ matrix.branch }}
         
-            echo "Commit history for develop:"
-            git log --oneline -5 refs/remotes/origin/develop
+        #     echo "Commit history for develop:"
+        #     git log --oneline -5 refs/remotes/origin/develop
         
-            echo "Trying to find common ancestors manually..."
-            git rev-list --all | grep $(git rev-parse refs/remotes/origin/develop)
-            git rev-list --all | grep $(git rev-parse refs/remotes/origin/${{ matrix.branch }})
+        #     echo "Trying to find common ancestors manually..."
+        #     git rev-list --all | grep $(git rev-parse refs/remotes/origin/develop)
+        #     git rev-list --all | grep $(git rev-parse refs/remotes/origin/${{ matrix.branch }})
         
-            echo "Finding merge base directly..."
-            git merge-base refs/remotes/origin/${{ matrix.branch }} refs/remotes/origin/develop
+        #     echo "Finding merge base directly..."
+        #     git merge-base refs/remotes/origin/${{ matrix.branch }} refs/remotes/origin/develop
         
         - name: Print just names
           run: |
