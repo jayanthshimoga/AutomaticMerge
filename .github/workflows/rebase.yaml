@@ -54,11 +54,18 @@ jobs:
           with:
             token: ${{ secrets.GITHUB_TOKEN }}
 
-
-        # - name: Update remote references and fetch
-        #   run: |
-        #     git remote set-head origin --auto
-        #     git fetch --all
+        - name: Fetch all branches
+          run: |
+            echo "Fetching all remote branches..."
+            git fetch --all
+    
+        - name: Verify branch existence
+          run: |
+            echo "Verifying branch existence..."
+            if ! git show-ref --verify --quiet refs/remotes/origin/${{ matrix.branch }}; then
+              echo "Branch 'origin/${{ matrix.branch }}' does not exist. Exiting..."
+              exit 1
+            fi
 
         - name: List branches
           run: |
@@ -70,9 +77,6 @@ jobs:
          
             PARENT_BRANCH=""
             CLOSEST_MERGE_BASE=""
-
-            # Fetch all remote branches
-            git fetch origin
 
             # Loop through all branches and find the closest merge base
             for BRANCH in $(git for-each-ref --format '%(refname:short)' refs/remotes/origin); do
