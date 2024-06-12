@@ -101,7 +101,7 @@ jobs:
             echo "Iterating through remote branches..."
             git for-each-ref --format='%(refname:short)' refs/remotes/origin | while read -r BRANCH; do
               echo "Checking branch: $BRANCH"
-              if [ "$BRANCH" != "$TARGET_BRANCH" ]; then
+              if [ "$BRANCH" != "${{ matrix.branch }}" ]; then
                 # Check if either branch is 'develop' and handle accordingly
                 if [ "$BRANCH" = "origin/develop" ] || [ "$TARGET_BRANCH" = "refs/remotes/origin/develop" ]; then
                   echo "Special handling for 'develop' branch..."
