@@ -86,8 +86,13 @@ jobs:
             for BRANCH in $(git for-each-ref --format '%(refname:short)' refs/remotes/origin); do
               echo "Checking branch: $BRANCH"
               if [ "$BRANCH" != "origin/${{ matrix.branch }}" ]; then
-                echo "Calculating merge base between $TARGET_BRANCH and $BRANCH..."
-                MERGE_BASE=$(git merge-base $TARGET_BRANCH $BRANCH) || { echo "Failed to find merge base with $BRANCH"; continue; }
+                if [ "$BRANCH" = "origin/develop" ] || [ "$TARGET_BRANCH" = "refs/remotes/origin/develop" ]; then
+                  echo "Special handling for 'develop' branch..."
+                  MERGE_BASE=$(git merge-base $TARGET_BRANCH refs/remotes/origin/develop) || { echo "Failed to find merge base with develop"; continue; }
+                else
+                  echo "Calculating merge base between $TARGET_BRANCH and $BRANCH..."
+                  MERGE_BASE=$(git merge-base $TARGET_BRANCH $BRANCH) || { echo "Failed to find merge base with $BRANCH"; continue; }
+                fi
 
                 # Check if the current branch is the closest match
                 if [ -z "$CLOSEST_MERGE_BASE" ] || [ "$(git rev-list --count $MERGE_BASE..$TARGET_BRANCH)" -lt "$(git rev-list --count $CLOSEST_MERGE_BASE..$TARGET_BRANCH)" ]; then
