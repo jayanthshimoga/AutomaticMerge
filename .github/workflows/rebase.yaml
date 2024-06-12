@@ -91,54 +91,48 @@ jobs:
           run: |
             echo "Finding exact parent branch for ${{ matrix.branch }}..."
 
-            PARENT_BRANCH=""
-            CLOSEST_MERGE_BASE=""
+            PARENT_BRANCH=""  # Initialize parent branch variable
+            CLOSEST_MERGE_BASE=""  # Initialize closest merge base variable
+            LEAST_COMMITS=0  # Initialize least commits counter
 
             # Explicitly reference the remote branch
-            TARGET_BRANCH="refs/remotes/origin/${{ matrix.branch }}"
+            TARGET_BRANCH="refs/remotes/origin/${{ matrix.branch }}"  # Set target branch as ${{ matrix.branch }}
+
+            # Get the timestamp of the target branch
+            TIMESTAMP_TARGET=$(git log -1 --format="%ct" $TARGET_BRANCH)
 
             # Loop through all remote branches and find the closest merge base
             echo "Iterating through remote branches..."
-            for BRANCH in $(git for-each-ref --format '%(refname:short)' refs/remotes/origin); do
+            git for-each-ref --format='%(refname:short)' refs/remotes/origin | while read -r BRANCH; do
               echo "Checking branch: $BRANCH"
-              if [ "$BRANCH" != "origin/${{ matrix.branch }}" ]; then
-                # Check if either branch is 'develop' and handle accordingly
-                if [ "$BRANCH" = "origin/develop" ] || [ "$TARGET_BRANCH" = "refs/remotes/origin/develop" ]; then
+              if [ "$BRANCH" != "${{ matrix.branch }}" ]; then  # Ensure we are not comparing the branch to itself
+
+                # Special handling for 'develop' branch
+                if [ "$BRANCH" = "origin/develop" ]; then
                   echo "Special handling for 'develop' branch..."
                   MERGE_BASE=$(git merge-base $TARGET_BRANCH refs/remotes/origin/develop) || { echo "Failed to find merge base with develop"; continue; }
-                  echo "Calculating merge base between $TARGET_BRANCH and $BRANCH..."
-                  # Calculate merge base based on commit timestamps
-                  TIMESTAMP_TARGET=$(git log -1 --format="%ct" $TARGET_BRANCH)
-                  TIMESTAMP_BRANCH=$(git log -1 --format="%ct" $BRANCH)
-                  if [ "$TIMESTAMP_TARGET" -gt "$TIMESTAMP_BRANCH" ]; then
-                      MERGE_BASE=$(git log -1 --format="%H" $TARGET_BRANCH)
-                  else
-                      MERGE_BASE=$(git log -1 --format="%H" $BRANCH)
-                  fi
                 else
                   echo "Calculating merge base between $TARGET_BRANCH and $BRANCH..."
+                  # Calculate merge base for regular branches
                   MERGE_BASE=$(git merge-base $TARGET_BRANCH $BRANCH) || { echo "Failed to find merge base with $BRANCH"; continue; }
-                  echo "Calculating merge base between $TARGET_BRANCH and $BRANCH..."
-                  # Calculate merge base based on commit timestamps
-                  TIMESTAMP_TARGET=$(git log -1 --format="%ct" $TARGET_BRANCH)
-                  TIMESTAMP_BRANCH=$(git log -1 --format="%ct" $BRANCH)
-                  if [ "$TIMESTAMP_TARGET" -gt "$TIMESTAMP_BRANCH" ]; then
-                      MERGE_BASE=$(git log -1 --format="%H" $TARGET_BRANCH)
-                  else
-                      MERGE_BASE=$(git log -1 --format="%H" $BRANCH)
-                  fi
                 fi
-                
 
-                # Check if the current branch is the closest match
-                if [ -z "$CLOSEST_MERGE_BASE" ] || [ "$(git rev-list --count $MERGE_BASE..$TARGET_BRANCH)" -lt "$(git rev-list --count $CLOSEST_MERGE_BASE..$TARGET_BRANCH)" ]; then
-                  CLOSEST_MERGE_BASE=$MERGE_BASE
-                  PARENT_BRANCH=$BRANCH
+                if [ -n "$MERGE_BASE" ]; then
+                  # Calculate the number of commits from the merge base to the target branch
+                  COMMITS_COUNT=$(git rev-list --count $MERGE_BASE..$TARGET_BRANCH)
+
+                  # If it's the first comparison or if the current branch has fewer commits since the merge base, update
+                  if [ -z "$CLOSEST_MERGE_BASE" ] || [ $COMMITS_COUNT -lt $LEAST_COMMITS ]; then
+                    CLOSEST_MERGE_BASE=$MERGE_BASE
+                    PARENT_BRANCH=$BRANCH
+                    LEAST_COMMITS=$COMMITS_COUNT
+                    echo "Updated closest merge base to $CLOSEST_MERGE_BASE with parent branch $PARENT_BRANCH"
+                  fi
                 fi
               fi
             done
 
-            if [ -z "$PARENT_BRANCH" ]; then
+            if [ -z "$PARENT_BRANCH" ]; then  # Check if a parent branch was found
               echo "No parent branch found. Exiting with error."
               exit 1
             fi
