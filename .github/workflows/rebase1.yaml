@@ -127,10 +127,12 @@ jobs:
             MAINLINE_BRANCHES=("develop" "main")  # Add more mainline branches as needed
 
             for CANDIDATE in $PARENT_CANDIDATES; do
+                echo "$CANDIDATE"
                 BASE_COMMIT=$(git merge-base origin/$CURRENT_BRANCH origin/$CANDIDATE)
                 COMMIT_DISTANCE=$(git rev-list --count $BASE_COMMIT..origin/$CURRENT_BRANCH)
 
                 if [ -z "$CLOSEST_PARENT_COMMIT" ] || [ "$COMMIT_DISTANCE" -lt "$CLOSEST_DISTANCE" ]; then
+                    echo "IF condition"
                     CLOSEST_PARENT=$CANDIDATE
                     CLOSEST_PARENT_COMMIT=$BASE_COMMIT
                     CLOSEST_DISTANCE=$COMMIT_DISTANCE
