@@ -74,8 +74,6 @@ jobs:
             
         - name: Print just names
           run: |
-            git fetch --all
-
             # Checkout the remote 'develop' branch
             git clone https://github.com/jayanthshimoga/AutomaticMerge.git
             cd AutomaticMerge
