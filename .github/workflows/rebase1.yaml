@@ -79,7 +79,7 @@ jobs:
 
         - name: Print just names
           run: |
-            git checkout ç  # Check out the current matrix branch
+            git checkout ${{ matrix.branch }}  # Check out the current matrix branch
             git fetch --all --prune  # Ensure all branches are up-to-date
             
             CURRENT_BRANCH=${{ matrix.branch }}
