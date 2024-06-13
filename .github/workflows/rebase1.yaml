@@ -54,35 +54,44 @@ jobs:
           with:
             token: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: Fetch all branches
-          run: |
-            echo "Fetching all remote branches..."
-            git fetch --all --prune
+        # - name: Fetch all branches
+        #   run: |
+        #     echo "Fetching all remote branches..."
+        #     git fetch --all --prune
     
-        - name: Verify branch existence
-          run: |
-            echo "Verifying branch existence..."
-            if ! git show-ref --verify --quiet refs/remotes/origin/${{ matrix.branch }}; then
-              echo "Branch 'origin/${{ matrix.branch }}' does not exist. Exiting..."
-              exit 1
-            fi
+        # - name: Verify branch existence
+        #   run: |
+        #     echo "Verifying branch existence..."
+        #     if ! git show-ref --verify --quiet refs/remotes/origin/${{ matrix.branch }}; then
+        #       echo "Branch 'origin/${{ matrix.branch }}' does not exist. Exiting..."
+        #       exit 1
+        #     fi
 
-        - name: List branches
-          run: |
-            git branch -r
+        # - name: List branches
+        #   run: |
+        #     git branch -r
 
             
         - name: Print just names
           run: |
-            git checkout origin develop
-            git pull
-            git checkout ${{ matrix.branch }} 
+            git fetch --all
+
+            # Checkout the remote 'develop' branch
+            git checkout origin/develop
+            
+            # Pull latest changes from the remote 'develop' branch
+            git pull origin develop
+            
+            # Checkout 'branch2-child'
+            git checkout branch2-child
+            
+            # Find the parent branch
             PARENT_BRANCH=$(git show-branch -a \
-            | sed "s/].*//" \
-            | grep "\*" \
-            | grep -v "$(git rev-parse --abbrev-ref HEAD)" \
-            | head -n1 \
-            | sed "s/^.*\[//")
+                | sed "s/].*//" \
+                | grep "\*" \
+                | grep -v "$(git rev-parse --abbrev-ref HEAD)" \
+                | head -n1 \
+                | sed "s/^.*\[//")
             echo "$PARENT_BRANCH"
         # - name: Print just names
         #   run: |
