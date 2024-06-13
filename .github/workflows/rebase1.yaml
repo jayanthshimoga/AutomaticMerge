@@ -54,149 +54,67 @@ jobs:
           with:
             token: ${{ secrets.GITHUB_TOKEN }}
 
-        # - name: Fetch all branches
-        #   run: |
-        #     echo "Fetching all remote branches..."
-        #     git fetch --all --prune
+        - name: Fetch all branches
+          run: |
+            echo "Fetching all remote branches..."
+            git fetch --all --prune
     
-        # - name: Verify branch existence
-        #   run: |
-        #     echo "Verifying branch existence..."
-        #     if ! git show-ref --verify --quiet refs/remotes/origin/${{ matrix.branch }}; then
-        #       echo "Branch 'origin/${{ matrix.branch }}' does not exist. Exiting..."
-        #       exit 1
-        #     fi
+        - name: Verify branch existence
+          run: |
+            echo "Verifying branch existence..."
+            if ! git show-ref --verify --quiet refs/remotes/origin/${{ matrix.branch }}; then
+              echo "Branch 'origin/${{ matrix.branch }}' does not exist. Exiting..."
+              exit 1
+            fi
 
-        # - name: List branches
-        #   run: |
-        #     git branch -r
+        - name: List branches
+          run: |
+            git branch -r
 
             
         - name: Print just names
           run: |
-            git fetch origin
-            git reset --hard origin/develop
-            git clean -f -d
-            git checkout ${{ matrix.branch }}
-            PARENT_BRANCH=$(git show-branch -a | sed "s/].*//" | grep "\*" | grep -v "$(git rev-parse --abbrev-ref HEAD)" | head -n1 | sed "s/^.*\[//")
-            echo "parent_branch: $PARENT_BRANCH"
-        # - name: Print just names
-        #   run: |
-        #     git checkout ${{ matrix.branch }}  # Check out the current matrix branch
-        #     git fetch --all --prune  # Ensure all branches are up-to-date
+            git checkout ${{ matrix.branch }}  # Check out the current matrix branch
+            git fetch --all --prune  # Ensure all branches are up-to-date
             
-        #     CURRENT_BRANCH=${{ matrix.branch }}
-        #     PARENT_CANDIDATES=$(git branch -r | grep -vE "origin/(HEAD|${CURRENT_BRANCH})" | sed 's@^ *origin/@@')
-        #     CLOSEST_PARENT=""
-        #     CLOSEST_PARENT_COMMIT=""
+            CURRENT_BRANCH=${{ matrix.branch }}
+            PARENT_CANDIDATES=$(git branch -r | grep -vE "origin/(HEAD|${CURRENT_BRANCH})" | sed 's@^ *origin/@@')
+            CLOSEST_PARENT=""
+            CLOSEST_PARENT_COMMIT=""
             
-        #     # Validate fetched branches
-        #     if [ -z "$PARENT_CANDIDATES" ]; then
-        #         echo "No parent candidates found. Exiting..."
-        #         exit 1
-        #     fi
+            # Validate fetched branches
+            if [ -z "$PARENT_CANDIDATES" ]; then
+                echo "No parent candidates found. Exiting..."
+                exit 1
+            fi
             
-        #     for CANDIDATE in $PARENT_CANDIDATES; do
-        #         BASE_COMMIT=$(git merge-base origin/$CURRENT_BRANCH origin/$CANDIDATE) || continue
+            for CANDIDATE in $PARENT_CANDIDATES; do
+                BASE_COMMIT=$(git merge-base origin/$CURRENT_BRANCH origin/$CANDIDATE) || continue
             
-        #         # Check for valid base commit
-        #         if [ -z "$BASE_COMMIT" ]; then
-        #             continue
-        #         fi
+                # Check for valid base commit
+                if [ -z "$BASE_COMMIT" ]; then
+                    continue
+                fi
             
-        #         # Calculate distance
-        #         COMMIT_DISTANCE=$(git rev-list --count $BASE_COMMIT..origin/$CURRENT_BRANCH)
-        #         CLOSEST_DISTANCE=$(git rev-list --count $CLOSEST_PARENT_COMMIT..origin/$CURRENT_BRANCH || echo 0)
+                # Calculate distance
+                COMMIT_DISTANCE=$(git rev-list --count $BASE_COMMIT..origin/$CURRENT_BRANCH)
+                CLOSEST_DISTANCE=$(git rev-list --count $CLOSEST_PARENT_COMMIT..origin/$CURRENT_BRANCH || echo 0)
             
-        #         if [ -z "$CLOSEST_PARENT_COMMIT" ] || [ "$COMMIT_DISTANCE" -lt "$CLOSEST_DISTANCE" ]; then
-        #             CLOSEST_PARENT=$CANDIDATE
-        #             CLOSEST_PARENT_COMMIT=$BASE_COMMIT
-        #         fi
-        #     done
+                if [ -z "$CLOSEST_PARENT_COMMIT" ] || [ "$COMMIT_DISTANCE" -lt "$CLOSEST_DISTANCE" ]; then
+                    CLOSEST_PARENT=$CANDIDATE
+                    CLOSEST_PARENT_COMMIT=$BASE_COMMIT
+                fi
+            done
             
-        #     # Validate the closest parent
-        #     if [ -z "$CLOSEST_PARENT" ]; then
-        #         echo "No parent branch determined. Exiting..."
-        #         exit 1
-        #     fi
+            # Validate the closest parent
+            if [ -z "$CLOSEST_PARENT" ]; then
+                echo "No parent branch determined. Exiting..."
+                exit 1
+            fi
             
-        #     echo "parent_branch: $CLOSEST_PARENT"
-        #     echo "PARENT_BRANCH=$CLOSEST_PARENT"
-        # - name: Print just names
-        #   run: |
-        #     set -e  # Exit on any error
-
-        #     echo "Checking out branch ${{ matrix.branch }}..."
-        #     git checkout ${{ matrix.branch }}
-        #     echo "Branch checked out successfully."
-
-        #     echo "Fetching all branches from origin..."
-        #     git fetch origin
-        #     echo "Fetched all branches successfully."
-
-        #     CURRENT_BRANCH=${{ matrix.branch }}
-        #     echo "Current branch: $CURRENT_BRANCH"
-
-        #     MAINLINE_BRANCHES=("develop" "main")  # Define your mainline branches here
-        #     echo "Mainline branches defined: ${MAINLINE_BRANCHES[@]}"
-
-        #     echo "Listing parent candidate branches..."
-        #     PARENT_CANDIDATES=$(git branch -r | grep -vE "origin/(HEAD|${CURRENT_BRANCH})" | sed 's@^ *origin/@@')
-        #     echo "Parent candidates: $PARENT_CANDIDATES"
-
-        #     CLOSEST_PARENT=""
-        #     CLOSEST_DISTANCE=""
-        #     MAINLINE_PARENT=""
-        #     MAINLINE_DISTANCE=""
-
-        #     for CANDIDATE in $PARENT_CANDIDATES; do
-        #         echo "Processing candidate branch: $CANDIDATE"
-
-        #         BASE_COMMIT=$(git merge-base origin/$CURRENT_BRANCH origin/$CANDIDATE)
-        #         echo "Base commit between $CURRENT_BRANCH and $CANDIDATE is $BASE_COMMIT"
-
-        #         COMMIT_DISTANCE=$(git rev-list --count $BASE_COMMIT..origin/$CURRENT_BRANCH)
-        #         echo "Commit distance from $BASE_COMMIT to $CURRENT_BRANCH: $COMMIT_DISTANCE"
-
-        #         if [[ " ${MAINLINE_BRANCHES[@]} " =~ " ${CANDIDATE#origin/} " ]]; then
-        #             echo "Candidate $CANDIDATE is a mainline branch."
-        #             if [ -z "$MAINLINE_DISTANCE" ] || [ "$COMMIT_DISTANCE" -lt "$MAINLINE_DISTANCE" ]; then
-        #                 MAINLINE_PARENT=$CANDIDATE
-        #                 MAINLINE_DISTANCE=$COMMIT_DISTANCE
-        #                 echo "Updated mainline parent to $MAINLINE_PARENT with distance $MAINLINE_DISTANCE"
-        #             fi
-        #         fi
-
-        #         if [ -z "$CLOSEST_PARENT" ] || [ "$COMMIT_DISTANCE" -lt "$CLOSEST_DISTANCE" ]; then
-        #             echo "Updating closest parent"
-        #             CLOSEST_PARENT=$CANDIDATE
-        #             CLOSEST_DISTANCE=$COMMIT_DISTANCE
-        #             echo "Updated closest parent to $CANDIDATE with distance $COMMIT_DISTANCE"
-        #         elif [ "$COMMIT_DISTANCE" -eq "$CLOSEST_DISTANCE" ]; then
-        #             echo "Tie-breaking: prioritize mainline branches"
-        #             if [[ " ${MAINLINE_BRANCHES[@]} " =~ " ${CANDIDATE#origin/} " ]]; then
-        #                 CLOSEST_PARENT=$CANDIDATE
-        #                 echo "Tie-breaker selected mainline branch $CANDIDATE as the closest parent"
-        #             fi
-        #         fi
-        #     done
-
-        #     echo "Mainline parent identified: $MAINLINE_PARENT"
-        #     echo "Closest parent identified: $CLOSEST_PARENT"
-
-        #     if [ -n "$MAINLINE_PARENT" ]; then
-        #         CLOSEST_PARENT=$MAINLINE_PARENT
-        #         echo "Selected mainline parent $MAINLINE_PARENT as the closest parent."
-        #     fi
-
-        #     if [ -z "$CLOSEST_PARENT" ]; then
-        #         echo "Error: No valid parent branch found. Exiting with error."
-        #         exit 1
-        #     fi
-
-        #     echo "Closest parent for branch $CURRENT_BRANCH is $CLOSEST_PARENT with a commit distance of $CLOSEST_DISTANCE."
-        #     echo "PARENT_BRANCH=$CLOSEST_PARENT" 
-        #     echo "Environment variable set: PARENT_BRANCH=$CLOSEST_PARENT"
+            echo "parent_branch: $CLOSEST_PARENT"
+            echo "PARENT_BRANCH=$CLOSEST_PARENT"
+        
 
 
 
