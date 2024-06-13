@@ -160,6 +160,7 @@ jobs:
                 fi
 
                 if [ -z "$CLOSEST_PARENT" ] || [ "$COMMIT_DISTANCE" -lt "$CLOSEST_DISTANCE" ]; then
+                    echo "Updating closest parent"
                     CLOSEST_PARENT=$CANDIDATE
                     CLOSEST_DISTANCE=$COMMIT_DISTANCE
                     echo "Updated closest parent to $CANDIDATE with distance $COMMIT_DISTANCE"
