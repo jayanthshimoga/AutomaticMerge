@@ -126,16 +126,16 @@ jobs:
             MIN_COMMIT_COUNT=-1
 
             for CANDIDATE in $PARENT_CANDIDATES; do
-            BASE_COMMIT=$(git merge-base origin/$CURRENT_BRANCH origin/$CANDIDATE)
-            COMMIT_COUNT=$(git rev-list --count $BASE_COMMIT..origin/$CURRENT_BRANCH)
+                BASE_COMMIT=$(git merge-base origin/$CURRENT_BRANCH origin/$CANDIDATE)
+                COMMIT_COUNT=$(git rev-list --count $BASE_COMMIT..origin/$CURRENT_BRANCH)
 
-            if [ $MIN_COMMIT_COUNT -eq -1 ] || [ $COMMIT_COUNT -lt $MIN_COMMIT_COUNT ]; then
-                MIN_COMMIT_COUNT=$COMMIT_COUNT
-                CLOSEST_PARENTS=()
-                CLOSEST_PARENTS["$CANDIDATE"]=$COMMIT_COUNT
-            elif [ $COMMIT_COUNT -eq $MIN_COMMIT_COUNT ]; then
-                CLOSEST_PARENTS["$CANDIDATE"]=$COMMIT_COUNT
-            fi
+                if [ $MIN_COMMIT_COUNT -eq -1 ] || [ $COMMIT_COUNT -lt $MIN_COMMIT_COUNT ]; then
+                    MIN_COMMIT_COUNT=$COMMIT_COUNT
+                    CLOSEST_PARENTS=()
+                    CLOSEST_PARENTS["$CANDIDATE"]=$COMMIT_COUNT
+                elif [ $COMMIT_COUNT -eq $MIN_COMMIT_COUNT ]; then
+                    CLOSEST_PARENTS["$CANDIDATE"]=$COMMIT_COUNT
+                fi
             done
 
             PARENT_LIST=$(printf "%s\n" "${!CLOSEST_PARENTS[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
