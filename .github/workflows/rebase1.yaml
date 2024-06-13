@@ -77,13 +77,11 @@ jobs:
             git fetch --all
 
             # Checkout the remote 'develop' branch
-            git checkout origin/develop
-            
-            # Pull latest changes from the remote 'develop' branch
-            git pull origin develop
-            
+            git clone https://github.com/jayanthshimoga/AutomaticMerge.git
+            cd AutomaticMerge
+
             # Checkout 'branch2-child'
-            git checkout branch2-child
+            git checkout ${{ matrix.branch }}
             
             # Find the parent branch
             PARENT_BRANCH=$(git show-branch -a \
