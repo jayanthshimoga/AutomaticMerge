@@ -150,7 +150,7 @@ jobs:
                 echo "Single parent branch found: $CLOSEST_PARENT"
                 echo "parent_branch: $CLOSEST_PARENT"
                 echo "PARENT_BRANCH=$CLOSEST_PARENT" >> $GITHUB_ENV
-                else
+            else
                 echo "No parent branch found. Exiting..."
                 exit 1
             fi
