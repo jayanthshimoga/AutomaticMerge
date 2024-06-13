@@ -142,34 +142,34 @@ jobs:
             MAINLINE_DISTANCE=""
 
             for CANDIDATE in $PARENT_CANDIDATES; do
-            echo "Processing candidate branch: $CANDIDATE"
+                echo "Processing candidate branch: $CANDIDATE"
 
-            BASE_COMMIT=$(git merge-base origin/$CURRENT_BRANCH origin/$CANDIDATE)
-            echo "Base commit between $CURRENT_BRANCH and $CANDIDATE is $BASE_COMMIT"
+                BASE_COMMIT=$(git merge-base origin/$CURRENT_BRANCH origin/$CANDIDATE)
+                echo "Base commit between $CURRENT_BRANCH and $CANDIDATE is $BASE_COMMIT"
 
-            COMMIT_DISTANCE=$(git rev-list --count $BASE_COMMIT..origin/$CURRENT_BRANCH)
-            echo "Commit distance from $BASE_COMMIT to $CURRENT_BRANCH: $COMMIT_DISTANCE"
+                COMMIT_DISTANCE=$(git rev-list --count $BASE_COMMIT..origin/$CURRENT_BRANCH)
+                echo "Commit distance from $BASE_COMMIT to $CURRENT_BRANCH: $COMMIT_DISTANCE"
 
-            if [[ " ${MAINLINE_BRANCHES[@]} " =~ " ${CANDIDATE#origin/} " ]]; then
-                echo "Candidate $CANDIDATE is a mainline branch."
-                if [ -z "$MAINLINE_DISTANCE" ] || [ "$COMMIT_DISTANCE" -lt "$MAINLINE_DISTANCE" ]; then
-                    MAINLINE_PARENT=$CANDIDATE
-                    MAINLINE_DISTANCE=$COMMIT_DISTANCE
-                    echo "Updated mainline parent to $MAINLINE_PARENT with distance $MAINLINE_DISTANCE"
-                fi
-            fi
-
-            if [ -z "$CLOSEST_PARENT" ] || [ "$COMMIT_DISTANCE" -lt "$CLOSEST_DISTANCE" ]; then
-                CLOSEST_PARENT=$CANDIDATE
-                CLOSEST_DISTANCE=$COMMIT_DISTANCE
-                echo "Updated closest parent to $CANDIDATE with distance $COMMIT_DISTANCE"
-            elif [ "$COMMIT_DISTANCE" -eq "$CLOSEST_DISTANCE" ]; then
-                echo "Tie-breaking: prioritize mainline branches"
                 if [[ " ${MAINLINE_BRANCHES[@]} " =~ " ${CANDIDATE#origin/} " ]]; then
-                    CLOSEST_PARENT=$CANDIDATE
-                    echo "Tie-breaker selected mainline branch $CANDIDATE as the closest parent"
+                    echo "Candidate $CANDIDATE is a mainline branch."
+                    if [ -z "$MAINLINE_DISTANCE" ] || [ "$COMMIT_DISTANCE" -lt "$MAINLINE_DISTANCE" ]; then
+                        MAINLINE_PARENT=$CANDIDATE
+                        MAINLINE_DISTANCE=$COMMIT_DISTANCE
+                        echo "Updated mainline parent to $MAINLINE_PARENT with distance $MAINLINE_DISTANCE"
+                    fi
                 fi
-            fi
+
+                if [ -z "$CLOSEST_PARENT" ] || [ "$COMMIT_DISTANCE" -lt "$CLOSEST_DISTANCE" ]; then
+                    CLOSEST_PARENT=$CANDIDATE
+                    CLOSEST_DISTANCE=$COMMIT_DISTANCE
+                    echo "Updated closest parent to $CANDIDATE with distance $COMMIT_DISTANCE"
+                elif [ "$COMMIT_DISTANCE" -eq "$CLOSEST_DISTANCE" ]; then
+                    echo "Tie-breaking: prioritize mainline branches"
+                    if [[ " ${MAINLINE_BRANCHES[@]} " =~ " ${CANDIDATE#origin/} " ]]; then
+                        CLOSEST_PARENT=$CANDIDATE
+                        echo "Tie-breaker selected mainline branch $CANDIDATE as the closest parent"
+                    fi
+                fi
             done
 
             echo "Mainline parent identified: $MAINLINE_PARENT"
@@ -188,5 +188,6 @@ jobs:
             echo "Closest parent for branch $CURRENT_BRANCH is $CLOSEST_PARENT with a commit distance of $CLOSEST_DISTANCE."
             echo "PARENT_BRANCH=$CLOSEST_PARENT" 
             echo "Environment variable set: PARENT_BRANCH=$CLOSEST_PARENT"
+
 
 
