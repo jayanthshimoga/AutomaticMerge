@@ -139,7 +139,7 @@ jobs:
                 elif [ "$COMMIT_DISTANCE" -eq "$CLOSEST_DISTANCE" ]; then
                     # If the distance is the same, prioritize mainline branches
                     if [[ " ${MAINLINE_BRANCHES[@]} " =~ " ${CANDIDATE#origin/} " ]]; then
-                    CLOSEST_PARENT=$CANDIDATE
+                        CLOSEST_PARENT=$CANDIDATE
                     fi
                 fi  
             done
