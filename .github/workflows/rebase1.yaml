@@ -132,27 +132,32 @@ jobs:
             MAINLINE_PARENT=""
 
             for CANDIDATE in $PARENT_CANDIDATES; do
-            BASE_COMMIT=$(git merge-base origin/$CURRENT_BRANCH origin/$CANDIDATE)
-            COMMIT_DISTANCE=$(git rev-list --count $BASE_COMMIT..origin/$CURRENT_BRANCH)
+                echo "$CANDIDATE"
+                BASE_COMMIT=$(git merge-base origin/$CURRENT_BRANCH origin/$CANDIDATE)
+                COMMIT_DISTANCE=$(git rev-list --count $BASE_COMMIT..origin/$CURRENT_BRANCH)
+                echo "Commit distance: $COMMIT_DISTANCE"
 
-            # Prioritize mainline branches
-            if [[ " ${MAINLINE_BRANCHES[@]} " =~ " ${CANDIDATE#origin/} " ]]; then
-                if [ -z "$MAINLINE_PARENT" ] || [ "$COMMIT_DISTANCE" -lt "$CLOSEST_DISTANCE" ]; then
-                    MAINLINE_PARENT=$CANDIDATE
-                fi
-            fi
-
-            # Update closest parent based on commit distance
-            if [ -z "$CLOSEST_PARENT_COMMIT" ] || [ "$COMMIT_DISTANCE" -lt "$CLOSEST_DISTANCE" ]; then
-                CLOSEST_PARENT=$CANDIDATE
-                CLOSEST_PARENT_COMMIT=$BASE_COMMIT
-                CLOSEST_DISTANCE=$COMMIT_DISTANCE
-            elif [ "$COMMIT_DISTANCE" -eq "$CLOSEST_DISTANCE" ]; then
-                # Tie-breaking: prioritize mainline branches
+                # Prioritize mainline branches
                 if [[ " ${MAINLINE_BRANCHES[@]} " =~ " ${CANDIDATE#origin/} " ]]; then
-                    CLOSEST_PARENT=$CANDIDATE
+                    echo "Mainline branches"
+                    if [ -z "$MAINLINE_PARENT" ] || [ "$COMMIT_DISTANCE" -lt "$CLOSEST_DISTANCE" ]; then
+                        echo "Mainline parent"
+                        MAINLINE_PARENT=$CANDIDATE
+                    fi
                 fi
-            fi
+
+                # Update closest parent based on commit distance
+                if [ -z "$CLOSEST_PARENT_COMMIT" ] || [ "$COMMIT_DISTANCE" -lt "$CLOSEST_DISTANCE" ]; then
+                    echo "IF condition"
+                    CLOSEST_PARENT=$CANDIDATE
+                    CLOSEST_PARENT_COMMIT=$BASE_COMMIT
+                    CLOSEST_DISTANCE=$COMMIT_DISTANCE
+                elif [ "$COMMIT_DISTANCE" -eq "$CLOSEST_DISTANCE" ]; then
+                    echo "Tie-breaking: prioritize mainline branches"
+                    if [[ " ${MAINLINE_BRANCHES[@]} " =~ " ${CANDIDATE#origin/} " ]]; then
+                        CLOSEST_PARENT=$CANDIDATE
+                    fi
+                fi
             done
 
             # Prefer mainline branch if available
