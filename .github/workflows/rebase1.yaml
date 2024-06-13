@@ -72,86 +72,45 @@ jobs:
             git branch -r
 
         
-        # - name: Print just names
-        #   run: |
-        #     git checkout ${{ matrix.branch }}  # Check out the current matrix branch
-        #     git fetch --all --prune  # Ensure all branches are up-to-date
-            
-        #     CURRENT_BRANCH=${{ matrix.branch }}
-        #     PARENT_CANDIDATES=$(git branch -r | grep -vE "origin/(HEAD|${CURRENT_BRANCH})" | sed 's@^ *origin/@@')
-        #     CLOSEST_PARENT=""
-        #     CLOSEST_PARENT_COMMIT=""
-            
-        #     # Validate fetched branches
-        #     if [ -z "$PARENT_CANDIDATES" ]; then
-        #         echo "No parent candidates found. Exiting..."
-        #         exit 1
-        #     fi
-            
-        #     for CANDIDATE in $PARENT_CANDIDATES; do
-        #         BASE_COMMIT=$(git merge-base origin/$CURRENT_BRANCH origin/$CANDIDATE) || continue
-            
-        #         # Check for valid base commit
-        #         if [ -z "$BASE_COMMIT" ]; then
-        #         continue
-        #         fi
-            
-        #         # Calculate distance
-        #         COMMIT_DISTANCE=$(git rev-list --count $BASE_COMMIT..origin/$CURRENT_BRANCH)
-        #         CLOSEST_DISTANCE=$(git rev-list --count $CLOSEST_PARENT_COMMIT..origin/$CURRENT_BRANCH || echo 0)
-            
-        #         if [ -z "$CLOSEST_PARENT_COMMIT" ] || [ "$COMMIT_DISTANCE" -lt "$CLOSEST_DISTANCE" ]; then
-        #         CLOSEST_PARENT=$CANDIDATE
-        #         CLOSEST_PARENT_COMMIT=$BASE_COMMIT
-        #         fi
-        #     done
-            
-        #     # Validate the closest parent
-        #     if [ -z "$CLOSEST_PARENT" ]; then
-        #         echo "No parent branch determined. Exiting..."
-        #         exit 1
-        #     fi
-            
-        #     echo "parent_branch: $CLOSEST_PARENT"
-        #     echo "PARENT_BRANCH=$CLOSEST_PARENT"
         - name: Print just names
           run: |
-            git checkout ${{ matrix.branch }}
-            git fetch origin
+            git checkout ${{ matrix.branch }}  # Check out the current matrix branch
+            git fetch --all --prune  # Ensure all branches are up-to-date
+            
             CURRENT_BRANCH=${{ matrix.branch }}
-
-            # Gather all remote branches excluding the current branch
             PARENT_CANDIDATES=$(git branch -r | grep -vE "origin/(HEAD|${CURRENT_BRANCH})" | sed 's@^ *origin/@@')
-            declare -A CLOSEST_PARENTS
-            MIN_COMMIT_COUNT=-1
-
-            for CANDIDATE in $PARENT_CANDIDATES; do
-                BASE_COMMIT=$(git merge-base origin/$CURRENT_BRANCH origin/$CANDIDATE)
-                COMMIT_COUNT=$(git rev-list --count $BASE_COMMIT..origin/$CURRENT_BRANCH)
-
-                if [ $MIN_COMMIT_COUNT -eq -1 ] || [ $COMMIT_COUNT -lt $MIN_COMMIT_COUNT ]; then
-                    MIN_COMMIT_COUNT=$COMMIT_COUNT
-                    CLOSEST_PARENTS=()
-                    CLOSEST_PARENTS["$CANDIDATE"]=$COMMIT_COUNT
-                elif [ $COMMIT_COUNT -eq $MIN_COMMIT_COUNT ]; then
-                    CLOSEST_PARENTS["$CANDIDATE"]=$COMMIT_COUNT
-                fi
-            done
-
-            PARENT_LIST=$(printf "%s\n" "${!CLOSEST_PARENTS[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
-            PARENT_COUNT=$(echo $PARENT_LIST | jq '. | length')
-
-            if [ $PARENT_COUNT -gt 1 ]; then
-                echo "Multiple potential parent branches found: $PARENT_LIST"
-                echo "Stopping workflow. Resolve potential parent branches manually."
-                exit 1
-            elif [ $PARENT_COUNT -eq 1 ]; then
-                CLOSEST_PARENT=$(echo $PARENT_LIST | jq -r '.[0]')
-                echo "Single parent branch found: $CLOSEST_PARENT"
-                echo "parent_branch: $CLOSEST_PARENT"
-                echo "PARENT_BRANCH=$CLOSEST_PARENT" >> $GITHUB_ENV
-            else
-                echo "No parent branch found. Exiting..."
+            CLOSEST_PARENT=""
+            CLOSEST_PARENT_COMMIT=""
+            
+            # Validate fetched branches
+            if [ -z "$PARENT_CANDIDATES" ]; then
+                echo "No parent candidates found. Exiting..."
                 exit 1
             fi
-        
+            
+            for CANDIDATE in $PARENT_CANDIDATES; do
+                BASE_COMMIT=$(git merge-base origin/$CURRENT_BRANCH origin/$CANDIDATE) || continue
+            
+                # Check for valid base commit
+                if [ -z "$BASE_COMMIT" ]; then
+                    continue
+                fi
+            
+                # Calculate distance
+                COMMIT_DISTANCE=$(git rev-list --count $BASE_COMMIT..origin/$CURRENT_BRANCH)
+                CLOSEST_DISTANCE=$(git rev-list --count $CLOSEST_PARENT_COMMIT..origin/$CURRENT_BRANCH || echo 0)
+            
+                if [ -z "$CLOSEST_PARENT_COMMIT" ] || [ "$COMMIT_DISTANCE" -lt "$CLOSEST_DISTANCE" ]; then
+                    CLOSEST_PARENT=$CANDIDATE
+                    CLOSEST_PARENT_COMMIT=$BASE_COMMIT
+                fi
+            done
+            
+            # Validate the closest parent
+            if [ -z "$CLOSEST_PARENT" ]; then
+                echo "No parent branch determined. Exiting..."
+                exit 1
+            fi
+            
+            echo "parent_branch: $CLOSEST_PARENT"
+            echo "PARENT_BRANCH=$CLOSEST_PARENT"
