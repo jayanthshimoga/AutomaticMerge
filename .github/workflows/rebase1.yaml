@@ -71,10 +71,15 @@ jobs:
           run: |
             git branch -r
 
-            
+        - name: Possible Parent branch
+          run: |
+            git checkout ${{ matrix.branch }}
+            PARENT_BRANCH=$(git show-branch | sed "s/].*//" | grep "\*" | grep -v "$(git rev-parse --abbrev-ref HEAD)" | head -n1 | sed "s/^.*\[//")
+            echo "$PARENT_BRANCH"
+
         - name: Print just names
           run: |
-            git checkout ${{ matrix.branch }}  # Check out the current matrix branch
+            git checkout ç  # Check out the current matrix branch
             git fetch --all --prune  # Ensure all branches are up-to-date
             
             CURRENT_BRANCH=${{ matrix.branch }}
@@ -99,7 +104,7 @@ jobs:
                 # Calculate distance
                 COMMIT_DISTANCE=$(git rev-list --count $BASE_COMMIT..origin/$CURRENT_BRANCH)
                 CLOSEST_DISTANCE=$(git rev-list --count $CLOSEST_PARENT_COMMIT..origin/$CURRENT_BRANCH || echo 0)
-            
+             
                 if [ -z "$CLOSEST_PARENT_COMMIT" ] || [ "$COMMIT_DISTANCE" -lt "$CLOSEST_DISTANCE" ]; then
                     CLOSEST_PARENT=$CANDIDATE
                     CLOSEST_PARENT_COMMIT=$BASE_COMMIT
