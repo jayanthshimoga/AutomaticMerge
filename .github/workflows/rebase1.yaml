@@ -54,22 +54,22 @@ jobs:
           with:
             token: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: Fetch all branches
-          run: |
-            echo "Fetching all remote branches..."
-            git fetch --all --prune
+        # - name: Fetch all branches
+        #   run: |
+        #     echo "Fetching all remote branches..."
+        #     git fetch --all --prune
     
-        - name: Verify branch existence
-          run: |
-            echo "Verifying branch existence..."
-            if ! git show-ref --verify --quiet refs/remotes/origin/${{ matrix.branch }}; then
-              echo "Branch 'origin/${{ matrix.branch }}' does not exist. Exiting..."
-              exit 1
-            fi
+        # - name: Verify branch existence
+        #   run: |
+        #     echo "Verifying branch existence..."
+        #     if ! git show-ref --verify --quiet refs/remotes/origin/${{ matrix.branch }}; then
+        #       echo "Branch 'origin/${{ matrix.branch }}' does not exist. Exiting..."
+        #       exit 1
+        #     fi
 
-        - name: List branches
-          run: |
-            git branch -r
+        # - name: List branches
+        #   run: |
+        #     git branch -r
 
             
         - name: Print just names
