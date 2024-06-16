@@ -1,38 +1,38 @@
-name: Release Feature Branch
-on:
-    schedule:
-        - cron: '0 0 * * *'
-    workflow_dispatch:
-jobs:
-    release-branch:
-        runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                branch:
-                   - feature-1
-                   - feature-2
-        steps:
-            - name: Checkout Repo
-              uses: actions/checkout@v2
-              with:
-                fetch-depth: 0
+# name: Release Feature Branch
+# on:
+#     schedule:
+#         - cron: '0 0 * * *'
+#     workflow_dispatch:
+# jobs:
+#     release-branch:
+#         runs-on: ubuntu-latest
+#         strategy:
+#             matrix:
+#                 branch:
+#                    - feature-1
+#                    - feature-2
+#         steps:
+#             - name: Checkout Repo
+#               uses: actions/checkout@v2
+#               with:
+#                 fetch-depth: 0
 
-            - name: Configure Git
-              run: |
-                git config --global user.name "github-actions[bot]"
-                git config --global user.email "github-actions[bot]@users.noreply.github.com"
-                git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+#             - name: Configure Git
+#               run: |
+#                 git config --global user.name "github-actions[bot]"
+#                 git config --global user.email "github-actions[bot]@users.noreply.github.com"
+#                 git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
     
-            - name: Fetch All Branches
-              run: git fetch --all
+#             - name: Fetch All Branches
+#               run: git fetch --all
 
-            - name: Rebase Feature Branch onto Develop
-              id: rebase
-              run: |
-                git checkout ${{ matrix.branch }}
-                git rebase origin/develop || git rebase --abort
-                git diff origin/${{ matrix.branch }} --quiet || git push origin HEAD:${{ matrix.branch }} --force
+#             - name: Rebase Feature Branch onto Develop
+#               id: rebase
+#               run: |
+#                 git checkout ${{ matrix.branch }}
+#                 git rebase origin/develop || git rebase --abort
+#                 git diff origin/${{ matrix.branch }} --quiet || git push origin HEAD:${{ matrix.branch }} --force
 
-            - name: Send Message if No Changes
-              if: steps.rebase.outcome == 'success'
-              run: echo "No changes detected in ${{ matrix.branch }} after rebasing from develop."
+#             - name: Send Message if No Changes
+#               if: steps.rebase.outcome == 'success'
+#               run: echo "No changes detected in ${{ matrix.branch }} after rebasing from develop."
