@@ -9,6 +9,7 @@ if (( $? != 0 )); then
     exit 1
 fi
 
+# TESTS
 
 ##
 # Given Params:
