@@ -1,0 +1,125 @@
+name: Automatically
+run-name: dp-dp-nxtleap-rebase-1
+on:
+    workflow_dispatch:
+jobs:
+    fetch-branches:
+      runs-on: ubuntu-latest
+      outputs:
+        branches: ${{ steps.get-branches.outputs.branches }}
+      
+      steps:
+          - name: Checkout repository
+            uses: actions/checkout@v2
+            with:
+              token: ${{ secrets.GITHUB_TOKEN }}
+
+          - name: Update remote references and fetch
+            run: |
+              git remote set-head origin --auto
+              git fetch --all --prune
+        
+          - name: List branches
+            run: |
+              git branch -r
+      
+          - name: Get all branches except develop and main
+            id: get-branches
+            run: |
+              DEFAULT_BRANCH=develop 
+              BRANCHES=$(git branch -r | grep -vE "origin/($DEFAULT_BRANCH|main|HEAD)" | sed 's@^ *origin/@@')
+              echo "$BRANCHES" 
+      
+              if [ -z "$BRANCHES" ]; then
+                echo "If No branches are found then exit."
+                exit 1 
+              fi
+
+              BRANCH_SEPERATED=$(echo $BRANCHES | tr ' \n' ',' | sed 's/,$//')
+              echo "$BRANCH_SEPERATED"
+              BRANCH_LIST=$(echo $BRANCH_SEPERATED | jq -R -s -c 'split(",") | map(gsub("^[[:space:]]+|[[:space:]]+$";"")) | map(select(length > 0))' | sed 's/\\n//g')
+              echo "Branches List: $BRANCH_LIST" 
+              echo "branches=$BRANCH_LIST" >> $GITHUB_OUTPUT
+
+    rebase-branches:
+      needs: fetch-branches
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          branch: ${{ fromJSON(needs.fetch-branches.outputs.branches) }}
+          
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v2
+          with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+
+        - name: Fetch all branches
+          run: |
+            echo "Fetching all remote branches..."
+            git fetch --all --prune
+    
+        - name: Verify branch existence
+          run: |
+            echo "Verifying branch existence..."
+            if ! git show-ref --verify --quiet refs/remotes/origin/${{ matrix.branch }}; then
+              echo "Branch 'origin/${{ matrix.branch }}' does not exist. Exiting..."
+              exit 1
+            fi
+
+        - name: List branches
+          run: |
+            git branch -r
+
+        - name: Possible Parent branch
+          run: |
+            git checkout ${{ matrix.branch }}
+            PARENT_BRANCH=$(git show-branch | sed "s/].*//" | grep "\*" | grep -v "$(git rev-parse --abbrev-ref HEAD)" | head -n1 | sed "s/^.*\[//")
+            echo "$PARENT_BRANCH"
+
+        - name: Print just names
+          run: |
+            git checkout ${{ matrix.branch }}  # Check out the current matrix branch
+            git fetch --all --prune  # Ensure all branches are up-to-date
+            
+            CURRENT_BRANCH=${{ matrix.branch }}
+            PARENT_CANDIDATES=$(git branch -r | grep -vE "origin/(HEAD|${CURRENT_BRANCH})" | sed 's@^ *origin/@@')
+            CLOSEST_PARENT=""
+            CLOSEST_PARENT_COMMIT=""
+            
+            # Validate fetched branches
+            if [ -z "$PARENT_CANDIDATES" ]; then
+                echo "No parent candidates found. Exiting..."
+                exit 1
+            fi
+            
+            for CANDIDATE in $PARENT_CANDIDATES; do
+                BASE_COMMIT=$(git merge-base origin/$CURRENT_BRANCH origin/$CANDIDATE) || continue
+            
+                # Check for valid base commit
+                if [ -z "$BASE_COMMIT" ]; then
+                    continue
+                fi
+            
+                # Calculate distance
+                COMMIT_DISTANCE=$(git rev-list --count $BASE_COMMIT..origin/$CURRENT_BRANCH)
+                CLOSEST_DISTANCE=$(git rev-list --count $CLOSEST_PARENT_COMMIT..origin/$CURRENT_BRANCH || echo 0)
+             
+                if [ -z "$CLOSEST_PARENT_COMMIT" ] || [ "$COMMIT_DISTANCE" -lt "$CLOSEST_DISTANCE" ]; then
+                    CLOSEST_PARENT=$CANDIDATE
+                    CLOSEST_PARENT_COMMIT=$BASE_COMMIT
+                fi
+            done
+            
+            # Validate the closest parent
+            if [ -z "$CLOSEST_PARENT" ]; then
+                echo "No parent branch determined. Exiting..."
+                exit 1
+            fi
+            
+            echo "parent_branch: $CLOSEST_PARENT"
+            echo "PARENT_BRANCH=$CLOSEST_PARENT"
+        
+
+
+

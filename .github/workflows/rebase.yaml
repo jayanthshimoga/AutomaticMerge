@@ -54,21 +54,148 @@ jobs:
           with:
             token: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: Update remote references and fetch
+        - name: Fetch all branches
           run: |
-            git remote set-head origin --auto
+            echo "Fetching all remote branches..."
             git fetch --all --prune
     
+        - name: Verify branch existence
+          run: |
+            echo "Verifying branch existence..."
+            if ! git show-ref --verify --quiet refs/remotes/origin/${{ matrix.branch }}; then
+              echo "Branch 'origin/${{ matrix.branch }}' does not exist. Exiting..."
+              exit 1
+            fi
+
         - name: List branches
           run: |
             git branch -r
+
+        - name: Determine Parent Branch
+          run: |
+            #!/bin/bash
+            set -e
+  
+            echo "Current Branch: ${{ matrix.branch }}"
+  
+            # Function to find parent branch
+            find_parent_branch() {
+              local branch=$1
+              for parent in $(git for-each-ref --format='%(refname:short)' refs/heads/); do
+                if [ "$branch" != "$parent" ]; then
+                  # Check if parent is an ancestor of branch
+                  if git merge-base --is-ancestor "$parent" "$branch"; then
+                    echo "$parent"
+                    return
+                  fi
+                fi
+              done
+            }
+  
+            parent_branch=$(find_parent_branch "${{ matrix.branch }}")
+            if [ -z "$parent_branch" ]; then
+              echo "No parent branch found for ${{ matrix.branch }}"
+            else
+              echo "Parent branch of ${{ matrix.branch }} is ${parent_branch}"
+            fi
         
         - name: Print just names
           run: |
-            CURRENT_BRANCH=$(echo "${{ matrix.branch }}" | sed 's/[[:space:]]*$//')
-            echo "Finding exact parent branch for ${{ matrix.branch }}..."
-            git checkout origin/${{ matrix.branch }}
-            PARENT_BRANCH = $(git show-branch -a | sed "s/].*//" | grep "\*" | grep -v "$(git rev-parse --abbrev-ref HEAD)" | head -n1 | sed "s/^.*\[//")
-            echo "parent_branch: $PARENT_BRANCH"
+            echo "Finding exact parent branch for ${{ matrix.branch }} ..."
+
+            PARENT_BRANCH=""  # Initialize parent branch variable
+            CLOSEST_MERGE_BASE=""  # Initialize closest merge base variable
+            LEAST_COMMITS=""  # Initialize least commits counter as empty
+
+            # Explicitly reference the remote branch
+            TARGET_BRANCH="refs/remotes/origin/${{ matrix.branch }}"  # Set target branch as ${{ matrix.branch }} 
+
+            # Get the timestamp of the target branch
+            TIMESTAMP_TARGET=$(git log -1 --format="%ct" $TARGET_BRANCH)
+
+            # Loop through all remote branches and find the closest merge base
+            echo "Iterating through remote branches..."
+            for BRANCH in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin); do
+              echo "Checking branch: $BRANCH"
+              if [ "$BRANCH" != "origin/${{ matrix.branch }} " ]; then  # Ensure we are not comparing the branch to itself
+
+                # Special handling for 'develop' branch
+                if [ "$BRANCH" = "origin/develop" ]; then
+                  echo "Special handling for 'develop' branch..."
+                  TIMESTAMP_TARGET=$(git log -1 --format="%ct" $TARGET_BRANCH)
+                  TIMESTAMP_BRANCH=$(git log -1 --format="%ct" $BRANCH)
+                  if [ "$TIMESTAMP_TARGET" -gt "$TIMESTAMP_BRANCH" ]; then
+                      MERGE_BASE=$(git log -1 --format="%H" $TARGET_BRANCH) || { echo "Failed to find merge base with develop"; continue; }
+                  else
+                      MERGE_BASE=$(git log -1 --format="%H" $BRANCH) || { echo "Failed to find merge base with develop"; continue; }
+                  fi
+                else
+                  echo "Calculating merge base between $TARGET_BRANCH and $BRANCH..."
+                  TIMESTAMP_TARGET=$(git log -1 --format="%ct" $TARGET_BRANCH)
+                  TIMESTAMP_BRANCH=$(git log -1 --format="%ct" $BRANCH)
+                  if [ "$TIMESTAMP_TARGET" -gt "$TIMESTAMP_BRANCH" ]; then
+                      MERGE_BASE=$(git log -1 --format="%H" $TARGET_BRANCH) || { echo "Failed to find merge base with $BRANCH"; continue; }
+                  else
+                      MERGE_BASE=$(git log -1 --format="%H" $BRANCH) || { echo "Failed to find merge base with $BRANCH"; continue; }
+                  fi                
+                fi
 
 
+                if [ -z "$CLOSEST_MERGE_BASE" ] || [ "$(git rev-list --count $MERGE_BASE..$TARGET_BRANCH)" -lt "$(git rev-list --count $CLOSEST_MERGE_BASE..$TARGET_BRANCH)" ]; then
+                  CLOSEST_MERGE_BASE=$MERGE_BASE
+                  PARENT_BRANCH=$BRANCH
+                fi
+              fi
+            done
+
+            if [ -z "$PARENT_BRANCH" ]; then  # Check if a parent branch was found
+              echo "No parent branch found. Exiting with error."
+              exit 1
+            fi
+
+            # Output the parent branch
+            echo "Immediate parent branch is: $PARENT_BRANCH"
+            echo "parent-branch=$PARENT_BRANCH"
+# echo "Finding exact parent branch for ${{ matrix.branch }}..."
+
+# PARENT_BRANCH=""
+# CLOSEST_MERGE_BASE=""
+
+# # Explicitly reference the remote branch
+# TARGET_BRANCH="refs/remotes/origin/${{ matrix.branch }}"
+
+# # Loop through all remote branches and find the closest merge base
+# echo "Iterating through remote branches..."
+# for BRANCH in $(git for-each-ref --format '%(refname:short)' refs/remotes/origin); do
+#   echo "Checking branch: $BRANCH"
+#   if [ "$BRANCH" != "origin/${{ matrix.branch }}" ]; then
+#     if [ "$BRANCH" = "origin/develop" ] || [ "$TARGET_BRANCH" = "refs/remotes/origin/develop" ]; then
+#       echo "Special handling for 'develop' branch..."
+#       MERGE_BASE=$(git merge-base $TARGET_BRANCH origin/develop) || { echo "_--_Failed to find merge base with develop"; continue; }
+#     else
+#       echo "Calculating merge base between $TARGET_BRANCH and $BRANCH..."
+#       MERGE_BASE=$(git merge-base $TARGET_BRANCH $BRANCH) || { echo "Failed to find merge base with $BRANCH"; continue; }
+#     fi
+
+#     # Check if the current branch is the closest match
+#     if [ -z "$CLOSEST_MERGE_BASE" ] || [ "$(git rev-list --count $MERGE_BASE..$TARGET_BRANCH)" -lt "$(git rev-list --count $CLOSEST_MERGE_BASE..$TARGET_BRANCH)" ]; then
+#       CLOSEST_MERGE_BASE=$MERGE_BASE
+#       PARENT_BRANCH=$BRANCH
+#     fi
+#   fi
+# done
+
+# if [ -z "$PARENT_BRANCH" ]; then
+#   echo "No parent branch found. Exiting with error."
+#   exit 1
+# fi
+
+# # Output the parent branch
+# echo "Immediate parent branch is: $PARENT_BRANCH"
+# echo "parent-branch=$PARENT_BRANCH" >> $GITHUB_ENV
+  # git fetch origin
+  # git reset --hard origin/develop
+  # git clean -f -d
+  # git checkout ${{ matrix.branch }}
+  # PARENT_BRANCH=$(git show-branch -a | sed "s/].*//" | grep "\*" | grep -v "$(git rev-parse --abbrev-ref HEAD)" | head -n1 | sed "s/^.*\[//")
+  # echo "parent_branch: $PARENT_BRANCH"
