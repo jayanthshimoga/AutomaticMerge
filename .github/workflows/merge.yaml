@@ -13,6 +13,6 @@ jobs:
             token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Rebase PR
-        uses: cirrus-actions/rebase@v1
+        uses: cirrus-actions/rebase@1.8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
