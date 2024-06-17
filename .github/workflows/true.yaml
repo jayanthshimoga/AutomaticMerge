@@ -1,0 +1,41 @@
+name: True-Rebase
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  rebase:
+    if: github.event.issue.pull_request != null && contains(github.event.comment.body, '/rebase')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract PR details
+        id: pr-details
+        run: |
+          echo "PR_NUMBER=$(jq -r .pull_request.number <<< '${{ toJson(github.event.issue) }}')" >> $GITHUB_ENV
+          echo "PR_AUTHOR=$(jq -r .pull_request.user.login <<< '${{ toJson(github.event.issue) }}')" >> $GITHUB_ENV
+
+      - name: Get PR data
+        id: pr-data
+        uses: tj-actions/branch-names@v7.9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-number: ${{ env.PR_NUMBER }}
+
+      - name: Set PR base branch
+        run: echo "PR_BASE=${{ steps.pr-data.outputs.base }}" >> $GITHUB_ENV
+
+      - name: Set PR head branch
+        run: echo "PR_HEAD=${{ steps.pr-data.outputs.head }}" >> $GITHUB_ENV
+
+      - name: Perform rebase
+        uses: cirrus-actions/rebase@v1.8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: ${{ env.PR_BASE }}
+          head: ${{ env.PR_HEAD }}
